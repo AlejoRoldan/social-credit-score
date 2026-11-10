@@ -6,7 +6,7 @@ covers: ["R1", "R2", "R3", "R4", "R5", "R6"]
 sources: ["_bmad-output/initiative-credito-comunitario/initiative-credito-comunitario.md"]
 companions: []
 refined: false
-risk: medium
+risk: high
 ---
 
 # Solicitud y decisión del círculo
@@ -38,9 +38,11 @@ Una persona envía una solicitud con un perfil ficticio y cinco respaldantes dis
 - En una red de seis, cinco votos favorables mantienen la propuesta en revisión. La reunión y el rechazo se reflejan en el estado.
 - Tras la reunión cada integrante registra su voto. Cambiar el monto reinicia la votación y exceder el límite del escenario impide el desembolso.
 
+- Comprobar el recorrido completo de esta épica en la demo móvil entregada para pruebas.
+
 ## Boundaries
 
-La entrega se prueba como transición simulada. El registro contable se especifica en la épica de bolsa y proyectos.
+La primera historia prepara el entorno móvil de demo y sus datos y roles de prueba para las otras dos épicas. La entrega se prueba como transición simulada. El registro contable se especifica en la épica de bolsa y proyectos.
 
 ## References
 
@@ -50,3 +52,4 @@ La entrega se prueba como transición simulada. El registro contable se especifi
 ## Notes
 
 - Open question: El tratamiento de una abstención, el retiro de un integrante y el eventual cierre de una revisión sin unanimidad siguen abiertos.
+- Decision: 2026-11-10. Proponer como primer recorrido «Enviar una solicitud y entregar la ficha al grupo». Las historias y sus comprobaciones están en el [registro de esta épica](tickets/tickets.toml).

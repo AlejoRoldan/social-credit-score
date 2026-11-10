@@ -1,0 +1,37 @@
+# Historias propuestas para revisión. El orden de las tablas es el orden de trabajo.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Consultar el puntaje individual y el del círculo"
+description = "Como participante, quiero distinguir mi puntaje del puntaje de mi círculo para entender qué información corresponde a cada uno. La vista del círculo toma sus importes del tablero de la HU 2.1."
+verify = "Con un perfil ficticio, abrir el detalle individual y la vista del círculo. Comprobar que el grupo ve señales agregadas junto con intereses cobrados y monto disponible del tablero, mientras el detalle del historial individual queda en la vista propia."
+covers = ["R1"]
+after = ["2.1"]
+hitl = false
+risk = "medium"
+# Consume el tablero de la HU 2.1. Los puntajes usan datos ficticios y tienen una presentación separada del saldo disponible.
+
+[[entry]]
+id = 2
+type = "story"
+title = "Explicar diferencias y falta de historial"
+description = "Como participante, quiero saber por qué cambia un puntaje y reconocer cuándo faltan datos para poder interpretarlo."
+verify = "Comparar dos casos ficticios con distinto resultado y consultar las señales del historial, cumplimiento, monto solicitado frente a los pagos, monto comprometido y tiempo de vínculo que explican la diferencia. Abrir un perfil nuevo y comprobar que «Historial insuficiente» se distingue de un incumplimiento. Comprobar que la finalidad aparece en la revisión sin fijar una regla nueva de puntuación."
+covers = ["R1"]
+after = [1]
+hitl = false
+risk = "medium"
+# Los pesos y la incidencia de la finalidad del préstamo quedan abiertos. La primera historia de esta épica aporta las vistas y esta añade su explicación.
+
+[[entry]]
+id = 3
+type = "story"
+title = "Recibir un recordatorio privado de cuota"
+description = "Como solicitante, quiero ver mi vencimiento y un siguiente paso en privado para poder anticipar un problema de pago."
+verify = "Abrir un vencimiento ficticio como solicitante, ver el recordatorio y elegir un siguiente paso. Cambiar al perfil respaldante y comprobar que solo accede a la información necesaria sobre su propio compromiso."
+covers = ["R2"]
+after = [1]
+hitl = false
+risk = "medium"
+# Continúa sobre las vistas por rol de la épica. La demo representa el recordatorio dentro de la app.

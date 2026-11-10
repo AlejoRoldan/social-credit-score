@@ -1,0 +1,37 @@
+# Historias propuestas para revisión. El orden de las tablas es el orden de trabajo.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Enviar una solicitud y entregar la ficha al grupo"
+description = "Como solicitante, quiero enviar mi solicitud con un círculo confirmado para que sus integrantes reciban el aviso y puedan revisar mi ficha."
+verify = "Con la demo móvil preparada, comprobar que cuatro respaldantes dejan el círculo incompleto. Confirmar cinco perfiles distintos, revisar monto, finalidad, cuotas y costo total en COP y enviar la solicitud. Comprobar que no se puede contar el perfil solicitante ni duplicar un perfil, que cada respaldante ve su tope antes de aceptar y que solo los confirmados reciben el aviso. Desde el aviso, abrir la ficha y comprobar que muestra el perfil resumido, el resumen del historial o su ausencia, la razón, el monto, el plazo, la cuota, el costo total y el tope propio."
+covers = ["R1","R2","R4"]
+after = []
+hitl = true
+risk = "medium"
+# Preparar y abrir el entorno de demo es el paso manual inicial. Este recorrido proporciona perfiles, roles y una solicitud versionada para la votación.
+
+[[entry]]
+id = 2
+type = "story"
+title = "Votar o dejar pendiente para reunión"
+description = "Como integrante del círculo, quiero votar sobre la propuesta o dejarla pendiente de reunión para que podamos decidir sobre el mismo monto y condiciones."
+verify = "En una red de seis, comprobar que cinco votos favorables dejan «En revisión». Marcar «Pendiente de reunión», retomar la ficha y registrar el voto individual de cada integrante. Intentar votar como solicitante y como respaldante sin confirmar. Comprobar que ambos votos se impiden, que un voto en contra bloquea la unanimidad y que un rechazo registrado se comunica sin autorizar la entrega. Cambiar monto, destino, condiciones o electores y comprobar que se crea una versión sin votos heredados."
+covers = ["R3","R5"]
+after = [1]
+hitl = false
+risk = "high"
+# La revisión comprueba que el historial de la versión anterior queda consultable y que un voto anterior no autoriza la propuesta nueva. Las abstenciones y el retiro de integrantes quedan como preguntas del PRD.
+
+[[entry]]
+id = 3
+type = "story"
+title = "Comprobar costo y habilitar el desembolso simulado"
+description = "Como solicitante, quiero entender el costo y saber cuándo la decisión del círculo permite el desembolso para poder seguir el resultado de mi solicitud y que el presupuesto de créditos reciba la autorización vigente."
+verify = "Comparar dos propuestas unánimes sobre su versión vigente. La que está dentro del límite ficticio y cumple las condiciones deja la autorización disponible para el presupuesto de créditos. La que supera el límite sigue bloqueada y explica el motivo aunque tenga unanimidad. Comprobar que la vista muestra tasa ilustrativa, intereses, cuotas y costo total en COP."
+covers = ["R1","R3","R6"]
+after = [2]
+hitl = false
+risk = "high"
+# Comprobar también que una propuesta sin unanimidad sigue bloqueada aunque cumpla el límite. Esta historia entrega la autorización que consume la HU 2.1.
