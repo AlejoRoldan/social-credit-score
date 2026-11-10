@@ -35,12 +35,14 @@ export function createDemoState() {
 }
 
 export function updateDraft(state, { amount, reason, weeks }) {
-  if (state.sent || !amounts.includes(amount) || !reasons.includes(reason) || !terms.includes(weeks)) {
-    return false;
-  }
+  if (state.sent || !validDetails({ amount, reason, weeks })) return false;
 
   state.draft = { amount, reason, weeks };
   return true;
+}
+
+function validDetails({ amount, reason, weeks }) {
+  return amounts.includes(amount) && reasons.includes(reason) && terms.includes(weeks);
 }
 
 export function loanDetails({ amount, reason, weeks }) {
@@ -87,15 +89,131 @@ export function submitApplication(state) {
   const confirmed = confirmedSupporters(state);
   if (confirmed.length < minimumSupporters) return false;
 
+  state.sent = makeVersion(1, state.draft, confirmed.map(({ id }) => id));
+  return true;
+}
+
+function newRound() {
+  return { paused: false, votes: {} };
+}
+
+function makeVersion(version, details, electorate) {
+  return {
+    application: { applicant: { ...applicant }, ...loanDetails(details) },
+    recipients: Object.fromEntries(electorate.map((id) => [id, contributionLimit])),
+    version,
+    rounds: [newRound()],
+  };
+}
+
+function currentVersion(state) {
+  const { sent } = state;
+  // HU 1.1 stored the original application and recipients without voting data.
+  if (sent && !sent.rounds) return { ...sent, version: 1, rounds: [newRound()] };
+  return sent;
+}
+
+function describeRound(round, electorateSize, number) {
+  const votes = Object.values(round.votes);
+  const approvals = votes.filter((vote) => vote === 'approve').length;
+  let status = 'review';
+  if (round.paused) status = 'meeting';
+  else if (votes.length === electorateSize) {
+    status = approvals === electorateSize ? 'approved' : 'rejected';
+  }
+
+  return { number, status, electorateSize, approvals, rejections: votes.length - approvals };
+}
+
+export function getApplicationStatus(state, profileId) {
+  const current = currentVersion(state);
+  if (!current || profileId !== applicant.id) return null;
+
+  const electorate = Object.keys(current.recipients);
+  return {
+    version: current.version,
+    application: current.application,
+    electorate,
+    round: describeRound(current.rounds.at(-1), electorate.length, current.rounds.length),
+  };
+}
+
+export function getInbox(state, profileId) {
+  const current = currentVersion(state);
+  if (!current) return [];
+
+  return [...(state.previousVersions ?? []), current].reverse()
+    .filter(({ recipients }) => Object.hasOwn(recipients, profileId))
+    .map(({ application, recipients, version, rounds }) => ({
+      title: 'Diana envió su solicitud',
+      application,
+      limit: recipients[profileId],
+      version,
+      isCurrent: version === current.version,
+      rounds: rounds.map((round, index) => ({
+        ...describeRound(round, Object.keys(recipients).length, index + 1),
+        decision: round.votes[profileId] ?? null,
+      })),
+    }));
+}
+
+export function submitRevision(state, profileId, version, details, electorate) {
+  const current = currentVersion(state);
+  if (!current || profileId !== applicant.id || current.version !== version ||
+      !details || !validDetails(details) || !Array.isArray(electorate)) return false;
+
+  const recipients = new Set(electorate);
+  if (recipients.size !== electorate.length || recipients.size < minimumSupporters ||
+      electorate.some((id) => getSupportStatus(state, id) !== 'confirmed')) return false;
+
+  const { amount, reason, weeks } = current.application;
+  const previousElectorate = Object.keys(current.recipients);
+  const sameElectorate = previousElectorate.length === recipients.size && previousElectorate.every((id) => recipients.has(id));
+  if (amount === details.amount && reason === details.reason && weeks === details.weeks && sameElectorate) return false;
+
+  state.previousVersions = [...(state.previousVersions ?? []), current];
+  state.sent = makeVersion(current.version + 1, details, electorate);
+  return true;
+}
+
+function eligibleVersion(state, profileId, version, round, requiredStatus) {
+  const current = currentVersion(state);
+  if (!current || current.version !== version || current.rounds.length !== round ||
+      !Object.hasOwn(current.recipients, profileId)) return null;
+
+  const { status } = describeRound(current.rounds.at(-1), Object.keys(current.recipients).length, round);
+  return status === requiredStatus ? current : null;
+}
+
+export function recordVote(state, profileId, version, round, vote) {
+  if (vote !== 'approve' && vote !== 'reject') return false;
+
+  const current = eligibleVersion(state, profileId, version, round, 'review');
+  if (!current) return false;
+
+  const activeRound = current.rounds.at(-1);
+  if (Object.hasOwn(activeRound.votes, profileId)) return false;
+
+  const updatedRound = { ...activeRound, votes: { ...activeRound.votes, [profileId]: vote } };
+  state.sent = { ...current, rounds: [...current.rounds.slice(0, -1), updatedRound] };
+  return true;
+}
+
+export function pauseForMeeting(state, profileId, version, round) {
+  const current = eligibleVersion(state, profileId, version, round, 'review');
+  if (!current) return false;
+
   state.sent = {
-    application: { applicant: { ...applicant }, ...loanDetails(state.draft) },
-    recipients: Object.fromEntries(confirmed.map(({ id }) => [id, contributionLimit])),
+    ...current,
+    rounds: [...current.rounds.slice(0, -1), { ...current.rounds.at(-1), paused: true }],
   };
   return true;
 }
 
-export function getInbox(state, profileId) {
-  return state.sent && Object.hasOwn(state.sent.recipients, profileId)
-    ? [{ title: 'Diana envió su solicitud', application: state.sent.application, limit: state.sent.recipients[profileId] }]
-    : [];
+export function resumeAfterMeeting(state, profileId, version, round) {
+  const current = eligibleVersion(state, profileId, version, round, 'meeting');
+  if (!current) return false;
+
+  state.sent = { ...current, rounds: [...current.rounds, newRound()] };
+  return true;
 }

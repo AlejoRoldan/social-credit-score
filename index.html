@@ -28,9 +28,9 @@
     </nav>
 
     <section class="card" id="needs" aria-labelledby="needs-title" hidden>
-      <p class="eyebrow">Paso 1 de 3</p>
+      <p class="eyebrow" id="needs-step">Paso 1 de 3</p>
       <h1 id="needs-title" tabindex="-1">Cuéntanos qué necesitas</h1>
-      <p>Elige las opciones para la solicitud de Diana.</p>
+      <p id="needs-description">Elige las opciones para la solicitud de Diana.</p>
       <form id="draft-form">
         <label for="amount">¿Cuánto necesitas en pesos (COP)?</label>
         <select id="amount" name="amount" required></select>
@@ -40,7 +40,21 @@
         <label for="weeks">¿En cuántas semanas pagarías?</label>
         <select id="weeks" name="weeks" required></select>
         <p>Harías un pago cada semana.</p>
-        <button type="submit">Continuar al grupo</button>
+        <fieldset id="revision-electorate" aria-describedby="electorate-hint" hidden>
+          <legend>Personas habilitadas para votar</legend>
+          <p id="electorate-hint">Elige al menos cinco personas que confirmaron su respaldo.</p>
+          <div id="revision-choices"></div>
+        </fieldset>
+        <dl class="facts" id="revision-preview" aria-live="polite" aria-atomic="true" hidden>
+          <div><dt>Valor de cada cuota semanal</dt><dd data-field="installment"></dd></div>
+          <div><dt>Intereses de ejemplo</dt><dd data-field="interest"></dd></div>
+          <div><dt>Total que pagarías</dt><dd data-field="total"></dd></div>
+        </dl>
+        <p id="revision-error" role="alert" hidden></p>
+        <div class="actions">
+          <button type="button" class="secondary" id="cancel-revision" data-go="success" hidden>Volver al estado</button>
+          <button type="submit" id="draft-submit">Continuar al grupo</button>
+        </div>
       </form>
     </section>
 
@@ -93,8 +107,14 @@
     <section class="card" id="success" aria-labelledby="success-title" hidden>
       <p class="eyebrow">Solicitud de prueba</p>
       <h1 id="success-title" tabindex="-1">Solicitud enviada al grupo</h1>
-      <p>Las personas que confirmaron su respaldo recibieron la ficha en su bandeja. Ahora el grupo revisará tu solicitud.</p>
+      <div class="callout decision-status">
+        <p id="applicant-version"></p>
+        <strong id="applicant-status"></strong>
+        <p id="applicant-votes"></p>
+      </div>
+      <p id="applicant-decision"></p>
       <p>Para ver cómo les llegó, cambia al perfil de prueba de una persona que confirmó.</p>
+      <button type="button" id="edit-revision" class="secondary">Preparar una nueva versión</button>
     </section>
 
     <section class="card" id="support" aria-labelledby="support-title" hidden>
@@ -116,15 +136,18 @@
       <h1 id="inbox-title" tabindex="-1">Bandeja</h1>
       <p>Tu estado: <strong data-support-status></strong></p>
       <p id="inbox-empty">Por ahora no tienes avisos.</p>
-      <div id="notice" class="callout" hidden>
-        <p id="notice-title"></p>
-        <button type="button" data-go="sheet">Abrir ficha de la solicitud</button>
-      </div>
+      <ul id="notices" class="notice-list" aria-label="Fichas de la solicitud" hidden></ul>
     </section>
 
     <section class="card" id="sheet" aria-labelledby="sheet-title" hidden>
       <p class="eyebrow">Ficha de la solicitud</p>
       <h1 id="sheet-title" tabindex="-1">Solicitud de <span id="applicant-name"></span></h1>
+      <div class="callout decision-status">
+        <p id="sheet-version"></p>
+        <strong id="sheet-status"></strong>
+        <p id="sheet-votes"></p>
+        <p id="sheet-decision"></p>
+      </div>
       <p id="applicant-summary"></p>
       <p id="applicant-history"></p>
       <div class="callout">
@@ -140,6 +163,16 @@
         <div><dt>Intereses de ejemplo</dt><dd data-field="interest"></dd></div>
         <div><dt>Total que pagaría Diana</dt><dd data-field="total"></dd></div>
       </dl>
+      <div class="actions" id="voting-actions">
+        <button type="button" data-decision="approve">Votar a favor</button>
+        <button type="button" data-decision="reject" class="secondary">Votar en contra</button>
+        <button type="button" data-decision="pause" class="secondary">Dejar pendiente para reunión</button>
+        <button type="button" data-decision="resume">Retomar votación</button>
+      </div>
+      <div class="decision-history" id="sheet-history" hidden>
+        <h2>Rondas anteriores de esta versión</h2>
+        <ul id="round-history" class="round-list"></ul>
+      </div>
       <button type="button" class="secondary" data-go="inbox">Volver a la bandeja</button>
     </section>
   </main>
