@@ -48,6 +48,7 @@
         <dl class="facts" id="revision-preview" aria-live="polite" aria-atomic="true" hidden>
           <div><dt>Valor de cada cuota semanal</dt><dd data-field="installment"></dd></div>
           <div><dt>Intereses de ejemplo</dt><dd data-field="interest"></dd></div>
+          <div><dt>Tasa ilustrativa prorrateada por semana</dt><dd data-field="weeklyRate"></dd></div>
           <div><dt>Total que pagarías</dt><dd data-field="total"></dd></div>
         </dl>
         <p id="revision-error" role="alert" hidden></p>
@@ -96,10 +97,11 @@
         <div><dt>Frecuencia de pago</dt><dd data-field="frequency"></dd></div>
         <div><dt>Valor de cada cuota</dt><dd data-field="installment"></dd></div>
         <div><dt>Intereses de ejemplo</dt><dd data-field="interest"></dd></div>
+        <div><dt>Tasa ilustrativa prorrateada por semana</dt><dd data-field="weeklyRate"></dd></div>
       </dl>
       <p id="review-recipients"></p>
       <form id="send-form" class="actions">
-        <button type="button" class="secondary" data-go="needs">Corregir datos</button>
+        <button type="button" class="secondary" data-go="needs" id="edit-draft">Corregir datos</button>
         <button type="submit">Enviar solicitud al grupo</button>
       </form>
     </section>
@@ -108,11 +110,17 @@
       <p class="eyebrow">Solicitud de prueba</p>
       <h1 id="success-title" tabindex="-1">Solicitud enviada al grupo</h1>
       <div class="callout decision-status">
+        <p>Decisión del grupo</p>
         <p id="applicant-version"></p>
         <strong id="applicant-status"></strong>
         <p id="applicant-votes"></p>
       </div>
       <p id="applicant-decision"></p>
+      <div class="callout decision-status">
+        <p>Desembolso simulado</p>
+        <strong id="applicant-disbursement"></strong>
+        <p id="applicant-cost"></p>
+      </div>
       <p>Para ver cómo les llegó, cambia al perfil de prueba de una persona que confirmó.</p>
       <button type="button" id="edit-revision" class="secondary">Preparar una nueva versión</button>
     </section>
@@ -161,6 +169,7 @@
         <div><dt>Frecuencia de pago</dt><dd data-field="frequency"></dd></div>
         <div><dt>Valor de cada cuota</dt><dd data-field="installment"></dd></div>
         <div><dt>Intereses de ejemplo</dt><dd data-field="interest"></dd></div>
+        <div><dt>Tasa ilustrativa prorrateada por semana</dt><dd data-field="weeklyRate"></dd></div>
         <div><dt>Total que pagaría Diana</dt><dd data-field="total"></dd></div>
       </dl>
       <div class="actions" id="voting-actions">

@@ -1,12 +1,14 @@
 import {
-  amounts, applicant, contributionLimit, countConfirmed, createDemoState, getApplicationStatus, getInbox,
-  getSupportStatus, inviteSupporter, loanDetails, minimumSupporters, reasons,
+  amounts, applicant, checkCost, contributionLimit, countConfirmed, createDemoState, getApplicationStatus, getInbox,
+  getSupportStatus, inviteSupporter, loanDetails, migrateLegacyRequest, minimumSupporters, reasons,
   pauseForMeeting, recordVote, respondToInvitation, resumeAfterMeeting, submitApplication,
   submitRevision, supporters, terms, updateDraft,
 } from './demo-state.mjs';
 
 const storageKey = 'credito-comunitario-hu-1-1';
 const currency = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
+const percent = new Intl.NumberFormat('es-CO', { style: 'percent', maximumFractionDigits: 2 });
+const percentagePoints = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 });
 const money = (amount) => `$${currency.format(amount)} COP`;
 const statusText = {
   confirmed: 'Confirmado',
@@ -32,6 +34,7 @@ const navigation = byId('support-navigation');
 const sections = document.querySelectorAll('main section');
 const applicantViews = ['needs', 'circle', 'review', 'success'];
 const state = loadState();
+if (migrateLegacyRequest(state)) saveState();
 let applicantView = 'needs';
 let editingVersion = null;
 let selectedVersion = null;
@@ -64,6 +67,7 @@ function fillDetails(section, details) {
     installment: money(details.installment),
     interest: money(details.interest),
     total: money(details.total),
+    weeklyRate: percent.format(checkCost(details).weeklyRate),
   };
 
   for (const field of byId(section).querySelectorAll('[data-field]')) {
@@ -133,16 +137,35 @@ function ownDecision({ decision }) {
 }
 
 function renderApplicantStatus() {
-  const { version, round } = getApplicationStatus(state, applicant.id);
+  const { version, round, cost, authorization } = getApplicationStatus(state, applicant.id);
   byId('applicant-version').textContent = `Versión ${version} · Ronda ${round.number}`;
   byId('applicant-status').textContent = votingStatus[round.status];
   byId('applicant-votes').textContent = voteProgress(round);
   byId('applicant-decision').textContent = {
     review: 'El grupo necesita todos los votos a favor para aprobar la solicitud.',
     meeting: 'El grupo pausó la votación para deliberar. Cuando la retome, empezará una nueva ronda.',
-    approved: 'El grupo aprobó la solicitud por unanimidad. Quedan pendientes la verificación del costo y la autorización del desembolso.',
+    approved: 'El grupo aprobó la solicitud por unanimidad.',
     rejected: 'El grupo completó la votación con al menos un voto en contra.',
   }[round.status];
+
+  const { weeklyRate, limit, withinLimit } = cost;
+  let disbursementStatus = 'Pendiente de aprobación del grupo';
+  if (authorization) disbursementStatus = 'Habilitado';
+  else if (!withinLimit) disbursementStatus = 'Bloqueado por costo';
+  else if (round.status === 'rejected') disbursementStatus = 'Bloqueado por la decisión del grupo';
+  byId('applicant-disbursement').textContent = disbursementStatus;
+
+  const displayedRate = percent.format(weeklyRate);
+  const displayedLimit = percent.format(limit);
+  const comparison = `La tasa ilustrativa es ${displayedRate} por semana y el límite ficticio es ${displayedLimit}.`;
+  const excess = (weeklyRate - limit) * 100;
+  if (!withinLimit && excess < 0.01) {
+    byId('applicant-cost').textContent = `La tasa semanal supera el límite ficticio de ${displayedLimit} por menos de 0,01 puntos porcentuales. Al redondear, la tasa se muestra como ${displayedRate}.`;
+    return;
+  }
+  byId('applicant-cost').textContent = withinLimit
+    ? `${comparison} El costo cumple la regla de la demo.`
+    : `${comparison} La tasa supera el límite por ${percentagePoints.format(excess)} puntos porcentuales.`;
 }
 
 function renderInbox(notices) {
@@ -253,8 +276,9 @@ function saveDraft() {
   return updated;
 }
 
-function renderRevisionPreview() {
+function renderCostPreview() {
   fillDetails('revision-preview', loanDetails(readDetails(new FormData(draftForm))));
+  byId('revision-preview').hidden = false;
 }
 
 profile.append(new Option(applicant.name, applicant.id));
@@ -289,10 +313,12 @@ for (const button of document.querySelectorAll('[data-go]')) {
   button.addEventListener('click', () => show(button.dataset.go));
 }
 
+byId('edit-draft').addEventListener('click', renderCostPreview);
+
 draftForm.addEventListener('change', () => {
   byId('revision-error').hidden = true;
-  if (editingVersion) renderRevisionPreview();
-  else saveDraft();
+  if (!editingVersion) saveDraft();
+  if (!byId('revision-preview').hidden) renderCostPreview();
 });
 draftForm.addEventListener('submit', (event) => {
   event.preventDefault();
@@ -340,8 +366,7 @@ byId('edit-revision').addEventListener('click', () => {
   byId('needs-description').textContent = 'Puedes cambiar las condiciones y quiénes votan. La nueva ficha empieza sin votos.';
   byId('draft-submit').textContent = 'Enviar nueva versión';
   byId('revision-electorate').hidden = false;
-  renderRevisionPreview();
-  byId('revision-preview').hidden = false;
+  renderCostPreview();
   byId('cancel-revision').hidden = false;
   byId('revision-error').hidden = true;
   show('needs');
