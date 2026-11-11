@@ -1,7 +1,7 @@
 import {
   amounts, applicant, checkCost, contributionLimit, countConfirmed, createDemoState, getApplicationStatus, getInbox,
-  getRecordedDisbursement, getSupportStatus, inviteSupporter, loanDetails, minimumSupporters, reasons,
-  pauseForMeeting, recordVote, respondToInvitation, resumeAfterMeeting, submitApplication,
+  getInstallmentReminder, getRecordedDisbursement, getSupportStatus, inviteSupporter, loanDetails, minimumSupporters, reasons,
+  pauseForMeeting, recordInstallmentIntention, recordVote, respondToInvitation, resumeAfterMeeting, submitApplication,
   submitRevision, supporters, terms, updateDraft,
 } from './demo-state.mjs';
 import {
@@ -21,6 +21,11 @@ const currency = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
 const percent = new Intl.NumberFormat('es-CO', { style: 'percent', maximumFractionDigits: 2 });
 const percentagePoints = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 });
 const money = (amount) => `$${currency.format(amount)} COP`;
+const reminderDate = new Intl.DateTimeFormat('es-CO', { dateStyle: 'long', timeZone: 'UTC' });
+const reminderNextSteps = {
+  'plan-to-pay': 'Aparta el importe antes del vencimiento.',
+  'need-to-talk': 'Anota lo que necesitas conversar sobre la cuota.',
+};
 const statusText = {
   confirmed: 'Confirmado',
   excluded: 'Fuera de la versión vigente',
@@ -43,6 +48,7 @@ const inviteForm = byId('invite-form');
 const invitee = byId('invitee');
 const responseForm = byId('response-form');
 const navigation = byId('navigation');
+const installmentReminder = byId('installment-reminder');
 const sections = document.querySelectorAll('main section');
 const applicantViews = ['needs', 'circle', 'review', 'success'];
 const guidedVoter = installmentSupporters.at(-1);
@@ -207,6 +213,26 @@ function ownDecision({ decision }) {
   if (decision === 'approve') return 'Votaste a favor.';
   if (decision === 'reject') return 'Votaste en contra.';
   return 'Sin voto de tu perfil en esta ronda.';
+}
+
+function renderReminderIntention(intention) {
+  for (const button of installmentReminder.querySelectorAll('[data-intention]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.intention === intention));
+  }
+  installmentReminder.querySelector('[data-reminder-next-step]').textContent = reminderNextSteps[intention] ?? '';
+}
+
+function renderInstallmentReminder(reminder) {
+  installmentReminder.replaceChildren();
+  if (!reminder) return;
+
+  const content = byId('installment-reminder-template').content.cloneNode(true);
+  const time = content.querySelector('time');
+  time.dateTime = reminder.dueDate;
+  time.textContent = reminderDate.format(new Date(reminder.dueDate));
+  content.querySelector('[data-reminder-amount]').textContent = money(reminder.amountCop);
+  installmentReminder.append(content);
+  renderReminderIntention(reminder.intention);
 }
 
 function renderApplicantStatus() {
@@ -586,6 +612,7 @@ function show(requestedView, moveFocus = true) {
     if (view === 'sheet') renderSheet(notice);
   }
 
+  renderInstallmentReminder(view === 'success' ? getInstallmentReminder(state, profile.value) : null);
   navigation.hidden = false;
   byId('guided-vote').hidden = installmentAllowed || (profile.value === guidedVoter && view === 'sheet');
   const navView = view === 'project' && financeAllowed ? 'finance'
@@ -668,6 +695,14 @@ function switchProfile(id, destination) {
 }
 
 profile.addEventListener('change', () => showProfile(false));
+
+installmentReminder.addEventListener('click', (event) => {
+  const intention = event.target.dataset.intention;
+  if (!recordInstallmentIntention(state, profile.value, intention)) return;
+
+  saveState();
+  renderReminderIntention(intention);
+});
 
 byId('choose-invited').addEventListener('click', () => profile.focus());
 byId('installment-profile').addEventListener('click', () => profile.focus());
@@ -852,6 +887,11 @@ byId('send-form').addEventListener('submit', (event) => {
   }
 });
 
-if (!guided && !['installment', 'project'].includes(presentation.normalNavigation?.view)) delete presentation.normalNavigation;
+const savedNormalNavigation = presentation.normalNavigation;
+const keepSupporterView = getRecordedDisbursement(normalState) &&
+  supporters.some(({ id }) => id === savedNormalNavigation?.profileId);
+if (!guided && !keepSupporterView && !['installment', 'project'].includes(savedNormalNavigation?.view)) {
+  delete presentation.normalNavigation;
+}
 renderScoreComparison();
 openJourney(guided, false, false);

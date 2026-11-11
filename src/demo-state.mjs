@@ -26,6 +26,8 @@ export const reasons = Object.freeze([
 export const minimumSupporters = 5;
 export const contributionLimit = 10_000;
 const weeklyCostLimit = 0.02;
+const firstInstallmentDueDate = '2026-11-23';
+const installmentIntentions = ['plan-to-pay', 'need-to-talk'];
 
 export function createDemoState() {
   return {
@@ -171,6 +173,30 @@ export function getDisbursementAuthorization(state) {
 
 export function getRecordedDisbursement(state) {
   return state.disbursements?.find(({ requestId }) => requestId === state.requestId) ?? null;
+}
+
+export function getInstallmentReminder(state, profileId) {
+  const current = getApplicationStatus(state, profileId);
+  const movement = current && getRecordedDisbursement(state);
+  if (!movement || movement.version !== current.version) return null;
+
+  const { requestId } = movement;
+  const intention = state.installmentIntention;
+  return {
+    requestId,
+    dueDate: firstInstallmentDueDate,
+    amountCop: current.application.installment,
+    intention: intention?.requestId === requestId ? intention.value : null,
+  };
+}
+
+export function recordInstallmentIntention(state, profileId, value) {
+  if (!installmentIntentions.includes(value)) return false;
+  const reminder = getInstallmentReminder(state, profileId);
+  if (!reminder) return false;
+
+  if (reminder.intention !== value) state.installmentIntention = { requestId: reminder.requestId, value };
+  return true;
 }
 
 export function getInbox(state, profileId) {

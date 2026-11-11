@@ -133,10 +133,27 @@
         <p id="applicant-disbursement-amount" hidden></p>
         <p id="applicant-cost"></p>
       </div>
+      <div id="installment-reminder"></div>
       <p id="application-profile-hint">Para ver cómo les llegó, cambia al perfil de prueba de una persona que confirmó.</p>
       <button type="button" id="simulate-installment" hidden>Simular la siguiente cuota</button>
       <button type="button" id="edit-revision" class="secondary">Preparar una nueva versión</button>
     </section>
+
+    <template id="installment-reminder-template">
+      <div class="callout" role="group" aria-labelledby="installment-reminder-title">
+        <h2 id="installment-reminder-title">Próxima cuota</h2>
+        <dl class="facts">
+          <div><dt>Vencimiento ficticio</dt><dd><time></time></dd></div>
+          <div><dt>Importe semanal</dt><dd data-reminder-amount></dd></div>
+        </dl>
+        <p>Tu elección se guarda en privado en la app.</p>
+        <div class="actions" role="group" aria-label="Elige tu siguiente paso">
+          <button type="button" class="secondary" data-intention="plan-to-pay" aria-pressed="false">Planeo pagar</button>
+          <button type="button" class="secondary" data-intention="need-to-talk" aria-pressed="false">Necesito conversar</button>
+        </div>
+        <p data-reminder-next-step role="status"></p>
+      </div>
+    </template>
 
     <section class="card" id="installment" aria-labelledby="installment-title" hidden>
       <h1 id="installment-title" tabindex="-1">Cuota pendiente</h1>

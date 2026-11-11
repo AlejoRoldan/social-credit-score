@@ -98,6 +98,14 @@ Los puntajes son ejemplos precargados. Las decisiones de crédito, impago y giro
 4. Abre «Bolsa del círculo» como Diana. Comprueba la explicación sobre los pagos a tiempo, los compromisos completados y el tiempo medio de vínculo, junto con los importes vigentes. Cambia a Rosa y comprueba que pierde el acceso. En una sesión nueva, sigue los pasos 1 a 5 del [recorrido de la HU 1.2](#probar-la-hu-12-con-seis-perfiles) para confirmar a Mateo en la versión 1 y excluirlo de la versión 2. Tras enviar la versión 2, cambia a Mateo y comprueba que la opción «Bolsa del círculo» desaparece y que no puede ver el puntaje colectivo ni los importes de la bolsa.
 5. En una sesión nueva, elige otra finalidad como Diana y sigue el recorrido de la HU 1.1 para enviar la solicitud. Comprueba que la revisión y la ficha de Ana muestran la finalidad elegida y que «Comparar ejemplos» conserva sus valores.
 
+## Probar la HU 3.3
+
+1. En una sesión nueva, abre «Iniciar demo». Antes del último voto, cambia a Diana y comprueba que «Mi solicitud» todavía no muestra «Próxima cuota». Vuelve a Luz, vota a favor y usa «Volver al perfil de Diana».
+2. En «Mi solicitud», comprueba que «Próxima cuota» muestra el vencimiento ficticio del 23 de noviembre de 2026 y $66.000 COP semanales para la ficha guiada. Elige «Planeo pagar», recarga y comprueba que se conserva la elección y su siguiente paso. Pulsa la misma opción y luego «Necesito conversar» para verificar que puedes cambiar de elección.
+3. Cambia a Ana y abre su ficha. Comprueba que conserva su aporte máximo y que el recordatorio, la elección y el siguiente paso desaparecen de la vista. Vuelve a Diana y comprueba que se recupera la elección.
+4. Abre «Ir al recorrido normal», completa el recorrido de la [HU 1.3](#probar-la-hu-13-con-el-mismo-monto-a-4-y-8-semanas) y guarda una elección distinta. Comprueba que el recordatorio usa los $41.250 COP de la versión de 8 semanas. Continúa y reinicia la demo guiada, vuelve a emitir el último voto y abre «Mi solicitud». El recordatorio guiado vuelve sin elección. Al regresar al recorrido normal se conserva su elección.
+5. Repite a 320 px en Chromium con Tab, Enter y tacto emulado. Comprueba el foco visible, la selección de las dos opciones y el siguiente paso. En el recorrido guiado, «Simular la siguiente cuota» abre el ejemplo independiente de la HU 2.2.
+
 ## Documentación
 
 - [Traspaso del prototipo](docs/traspaso-prototipo.md) con decisiones, planes por historia, pruebas y orden de revisión de los PRs.

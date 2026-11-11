@@ -25,12 +25,12 @@ Estado verificado el **11 de noviembre de 2026**. El [README](../README.md) cont
 | [HU 2.2](../_bmad-output/initiative-credito-comunitario/tickets/epic-bolsa-y-proyectos/tickets/story-repartir-el-faltante-de-una-cuota-plan.md) | Cuota impaga, aportes, reserva y recorrido guiado | Implementada · [#7](https://github.com/AlejoRoldan/social-credit-score/pull/7) |
 | [HU 2.3](../_bmad-output/initiative-credito-comunitario/tickets/epic-bolsa-y-proyectos/tickets/story-proponer-y-girar-fondos-para-un-proyecto-colectivo-plan.md) | Propuesta del taller, unanimidad y confirmación del giro | Implementada · [#8](https://github.com/AlejoRoldan/social-credit-score/pull/8) |
 | [HU 3.1](../_bmad-output/initiative-credito-comunitario/tickets/epic-puntajes-y-seguimiento/tickets/story-consultar-el-puntaje-individual-y-el-del-circulo-plan.md) | Historial propio y señales agregadas del círculo | Implementada · [#9](https://github.com/AlejoRoldan/social-credit-score/pull/9) |
-| [HU 3.2](../_bmad-output/initiative-credito-comunitario/tickets/epic-puntajes-y-seguimiento/tickets/story-explicar-diferencias-y-falta-de-historial-plan.md) | Comparador anónimo y explicación de historial insuficiente | Implementada · comparador y señales explicadas |
-| [HU 3.3](../_bmad-output/initiative-credito-comunitario/tickets/epic-puntajes-y-seguimiento/tickets/tickets.toml) | Recordatorio privado de cuota y siguiente paso | En backlog |
+| [HU 3.2](../_bmad-output/initiative-credito-comunitario/tickets/epic-puntajes-y-seguimiento/tickets/story-explicar-diferencias-y-falta-de-historial-plan.md) | Comparador anónimo y explicación de historial insuficiente | Implementada · [#11](https://github.com/AlejoRoldan/social-credit-score/pull/11) |
+| [HU 3.3](../_bmad-output/initiative-credito-comunitario/tickets/epic-puntajes-y-seguimiento/tickets/story-recibir-un-recordatorio-privado-de-cuota-plan.md) | Recordatorio privado de cuota y siguiente paso | Implementada |
 
 ## Demo y evidencia
 
-Desde la raíz del repositorio, en una copia que incluya las historias hasta la HU 3.2:
+Desde la raíz del repositorio, en una copia que incluya las historias hasta la HU 3.3:
 
 ```sh
 python -m http.server 8000 --bind 127.0.0.1
@@ -43,11 +43,13 @@ Abre [la demo local](http://127.0.0.1:8000/). Para validar las reglas, ejecuta `
 3. **Proyecto.** En **Bolsa del círculo → Abrir proyecto colectivo**, prueba primero una propuesta de **$65.000** para ver el exceso de **$5.000**. Envía **$50.000**, registra cinco votos y confirma. El disponible baja de **$60.000 a $10.000**, la reserva sigue en **$40.000** y la recarga conserva un giro.
 4. **Puntajes.** En **Mi puntaje**, Ana ve **82/100** y su historial. Diana ve **Historial insuficiente**. En la bolsa, el puntaje ficticio del círculo es **78/100**. Comprueba que el disponible refleja el giro y que un perfil pendiente carece de acceso al tablero.
 
-**Verificación al cierre de la HU 3.2.** 40 pruebas automatizadas. Chromium a 320 px con teclado y tacto para los recorridos de puntaje, proyecto e impago. La primera historia también se verificó con texto al 200 %. Los planes y PRs enlazados conservan las comprobaciones de cada entrega.
+5. **Recordatorio.** Tras el desembolso, Diana abre **Próxima cuota**, consulta los **$66.000 COP** semanales del ejemplo guiado y elige un siguiente paso. Cambia a un respaldante para comprobar que su elección es privada.
+
+**Verificación al cierre de la HU 3.3.** 42 pruebas automatizadas. Chromium a 320 px con teclado y tacto para los recorridos de recordatorio, puntaje, proyecto e impago. La primera historia también se verificó con texto al 200 %. Los planes y PRs enlazados conservan las comprobaciones de cada entrega.
 
 ## Revisión y pendientes
 
-- Los PRs [#1](https://github.com/AlejoRoldan/social-credit-score/pull/1) a [#9](https://github.com/AlejoRoldan/social-credit-score/pull/9) estaban abiertos al verificar este documento. Son una cadena de dependencias que empieza en `main`. Para revisar los cambios incrementales, empezar por el PR #1 y avanzar en orden. El PR [#3](https://github.com/AlejoRoldan/social-credit-score/pull/3) tiene a **@iatechdev** como revisor solicitado.
+- La cadena de PRs desde [#1](https://github.com/AlejoRoldan/social-credit-score/pull/1) hasta [#11](https://github.com/AlejoRoldan/social-credit-score/pull/11) empieza en `main`. Para revisar los cambios incrementales, empezar por el PR #1 y avanzar en orden. El PR [#3](https://github.com/AlejoRoldan/social-credit-score/pull/3) tiene a **@iatechdev** como revisor solicitado.
 - **HU 3.2.** Verificar en revisión el comparador de casos ficticios anónimos de **82/100 y 58/100** y la distinción entre falta de datos e incumplimiento observado.
-- **HU 3.3.** Preparar el plan del recordatorio de cuota, visible para la persona solicitante.
+- **HU 3.3.** Verificar el recordatorio privado de Diana, la elección tras recargar y el reinicio independiente de la demo guiada.
 - **Antes de un piloto.** Resolver las preguntas del PRD sobre abstención y retiro, custodia y financiación, reserva y topes, uso de la finalidad en el puntaje y comunidad inicial. Las tasas, aportes y giros actuales pertenecen a la simulación.
