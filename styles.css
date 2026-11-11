@@ -130,8 +130,8 @@ button:disabled { background: #e8eeea; color: #425c53; border-color: #789087; cu
 .member-list li { display: flex; flex-wrap: wrap; gap: .25rem 1rem; justify-content: space-between; }
 .member-list span { color: var(--muted); }
 .facts dd { margin: 0; }
-#finance h2, #installment h2, #project h2 { margin: 0; font-size: 1.25rem; }
-.installment-content, .project-content { display: grid; gap: 1rem; }
+#finance h2, #installment h2, #project h2, #score h2 { margin: 0; font-size: 1.25rem; }
+.installment-content, .project-content, .score-content { display: grid; gap: 1rem; }
 #project-form input {
   min-block-size: 44px;
   width: 100%;

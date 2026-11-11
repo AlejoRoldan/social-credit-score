@@ -32,6 +32,7 @@
       <button type="button" class="secondary" data-go="application">Mi solicitud</button>
       <button type="button" class="secondary" data-go="support">Mi respaldo</button>
       <button type="button" class="secondary" data-go="inbox">Bandeja</button>
+      <button type="button" class="secondary" data-go="score">Mi puntaje</button>
       <button type="button" class="secondary" data-go="finance">Bolsa del círculo</button>
       <button type="button" class="secondary" data-go="project" hidden>Proyecto colectivo</button>
       <button type="button" class="secondary" data-go="installment">Cuota pendiente</button>
@@ -169,14 +170,36 @@
       <button type="button" id="installment-profile" class="secondary" hidden>Ir al selector de perfiles</button>
     </section>
 
+    <section class="card" id="score" aria-labelledby="score-title" hidden>
+      <h1 id="score-title" tabindex="-1">Mi puntaje</h1>
+      <p id="own-score-insufficient" class="callout" hidden>Historial insuficiente</p>
+      <div id="own-score-result" class="score-content" hidden>
+        <p class="callout total">Puntaje ficticio <strong id="own-score-value"></strong></p>
+        <h2>Resumen de mi historial ficticio</h2>
+        <dl class="facts">
+          <div><dt>Cumplimiento</dt><dd id="own-score-compliance"></dd></div>
+          <div><dt>Compromisos</dt><dd id="own-score-commitments"></dd></div>
+          <div><dt>Tiempo de vínculo</dt><dd id="own-score-membership"></dd></div>
+        </dl>
+      </div>
+    </section>
+
     <section class="card" id="finance" aria-labelledby="finance-title" hidden>
       <h1 id="finance-title" tabindex="-1">Bolsa del círculo</h1>
+      <h2>Puntaje del círculo</h2>
+      <p class="callout total">Puntaje ficticio <strong id="circle-score-value"></strong></p>
+      <dl class="facts" aria-label="Señales agregadas ficticias">
+        <div><dt>Cumplimiento</dt><dd id="circle-score-compliance"></dd></div>
+        <div><dt>Compromisos</dt><dd id="circle-score-commitments"></dd></div>
+        <div><dt>Tiempo de vínculo</dt><dd id="circle-score-membership"></dd></div>
+      </dl>
+      <h2>Importes de la bolsa</h2>
       <dl class="facts">
         <div><dt>Intereses cobrados</dt><dd id="fund-interest"></dd></div>
         <div><dt>Saldo</dt><dd id="fund-balance"></dd></div>
         <div><dt>Reserva</dt><dd id="fund-reserve"></dd></div>
         <div><dt>Compromisos</dt><dd id="fund-commitments"></dd></div>
-        <div class="finance-available"><dt>Disponible</dt><dd id="fund-available"></dd></div>
+        <div class="finance-available"><dt>Disponible para proyectos</dt><dd id="fund-available"></dd></div>
       </dl>
       <h2>Presupuestos de la operación</h2>
       <dl class="facts">

@@ -81,6 +81,15 @@ Los dos ejemplos también están disponibles desde «Cuota pendiente» en el rec
 5. En una sesión nueva, vota en contra y verifica que el giro queda bloqueado. Envía otra propuesta por $60.000 COP y comprueba que parte con cero votos y que la ficha anterior aparece en «Propuestas anteriores». Tras cinco votos a favor y la confirmación, quedan $0 COP disponibles. Cambia a Mateo o Rosa para verificar que carecen de acceso al caso.
 6. En Chromium a 320 px, usa Tab y Enter o Espacio para abrir la ficha, enviar, votar y confirmar. Usa el selector de perfiles para emitir los cinco votos. Repite con tacto emulado y recarga para verificar el movimiento único.
 
+## Probar la HU 3.1
+
+1. Selecciona **Ana** y abre **Mi puntaje** para ver un puntaje ficticio y su resumen privado.
+2. Cambia a **Diana** o a otro perfil desde **Cambiar perfil de prueba**. La vista muestra **Historial insuficiente** y retira el resultado anterior. Abre otra vista y vuelve a **Mi puntaje** para comprobar que refleja el perfil activo.
+3. Con **Diana** o un respaldante habilitado, abre **Bolsa del círculo**. Allí aparecen el puntaje ficticio del grupo, sus señales agregadas y los importes vigentes. Cambia a **Luz** mientras su invitación siga pendiente, o a un perfil ajeno al padrón vigente, para comprobar que pierde el acceso a la bolsa.
+4. Registra el giro colectivo de **$50.000 COP** del recorrido anterior y vuelve a **Bolsa del círculo** con un perfil habilitado. El disponible para proyectos pasa de **$60.000 COP** a **$10.000 COP** y el puntaje colectivo conserva su valor.
+
+Los puntajes son ejemplos precargados. Las decisiones de crédito, impago y giro siguen sus propias reglas.
+
 ## Documentación
 
 - [PRD v0.5](_bmad-output/initiative-credito-comunitario/prd-inclusion-financiera/prd-inclusion-financiera.md) con el alcance, las decisiones confirmadas y las preguntas abiertas.
