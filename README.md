@@ -90,6 +90,14 @@ Los dos ejemplos también están disponibles desde «Cuota pendiente» en el rec
 
 Los puntajes son ejemplos precargados. Las decisiones de crédito, impago y giro siguen sus propias reglas.
 
+## Probar la HU 3.2
+
+1. Abre «Mi puntaje» como Diana. Comprueba que «Historial insuficiente» explica que faltan datos y aparece sin valor numérico.
+2. Abre «Comparar ejemplos». Los casos anónimos muestran 82/100 y 58/100 y las mismas cinco señales. Lee qué pasó con la cuota de la semana 10 del caso B y compara los montos en COP durante el periodo observado.
+3. Con el comparador abierto, cambia a Ana y luego a Diana. El detalle privado de Ana desaparece al cambiar a Diana y los casos conservan su contenido. A 320 px en Chromium, abre y cierra «Comparar ejemplos» con Tab y Enter y mediante toque. Comprueba que puedes leer ambos casos en una columna.
+4. Abre «Bolsa del círculo» como Diana. Comprueba la explicación sobre los pagos a tiempo, los compromisos completados y el tiempo medio de vínculo, junto con los importes vigentes. Cambia a Rosa y comprueba que pierde el acceso. En una sesión nueva, sigue los pasos 1 a 5 del [recorrido de la HU 1.2](#probar-la-hu-12-con-seis-perfiles) para confirmar a Mateo en la versión 1 y excluirlo de la versión 2. Tras enviar la versión 2, cambia a Mateo y comprueba que la opción «Bolsa del círculo» desaparece y que no puede ver el puntaje colectivo ni los importes de la bolsa.
+5. En una sesión nueva, elige otra finalidad como Diana y sigue el recorrido de la HU 1.1 para enviar la solicitud. Comprueba que la revisión y la ficha de Ana muestran la finalidad elegida y que «Comparar ejemplos» conserva sus valores.
+
 ## Documentación
 
 - [Traspaso del prototipo](docs/traspaso-prototipo.md) con decisiones, planes por historia, pruebas y orden de revisión de los PRs.

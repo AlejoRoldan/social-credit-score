@@ -142,6 +142,21 @@ button:disabled { background: #e8eeea; color: #425c53; border-color: #789087; cu
 }
 #project-error { color: #8b3700; }
 #project-history summary { min-block-size: 44px; padding-block: .625rem; cursor: pointer; }
+#score-comparison summary {
+  min-block-size: 44px;
+  border: 1px solid var(--green);
+  border-radius: .5rem;
+  padding: .625rem .875rem;
+  color: var(--green);
+  font-weight: 700;
+  cursor: pointer;
+}
+#score-comparison > .score-content { margin-block-start: 1rem; }
+.score-example {
+  padding: .875rem;
+  border: 1px solid var(--line);
+  border-radius: .625rem;
+}
 .finance-available {
   padding-inline: .75rem;
   border-radius: .5rem;
