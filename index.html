@@ -15,6 +15,12 @@
         <label for="profile">Cambiar perfil de prueba</label>
         <select id="profile" aria-describedby="demo-note"></select>
         <p id="demo-note">Demo con personas y montos ficticios.</p>
+        <div class="actions demo-switch">
+          <button type="button" id="start-demo">Iniciar demo</button>
+          <button type="button" id="guided-vote" hidden>Ir al voto de Luz</button>
+          <button type="button" id="reset-demo" class="secondary" hidden>Reiniciar demo</button>
+          <button type="button" id="exit-demo" class="secondary" hidden>Ir al recorrido normal</button>
+        </div>
       </div>
     </div>
   </header>
@@ -27,6 +33,7 @@
       <button type="button" class="secondary" data-go="support">Mi respaldo</button>
       <button type="button" class="secondary" data-go="inbox">Bandeja</button>
       <button type="button" class="secondary" data-go="finance">Bolsa del círculo</button>
+      <button type="button" class="secondary" data-go="installment">Cuota pendiente</button>
     </nav>
 
     <section class="card" id="needs" aria-labelledby="needs-title" hidden>
@@ -124,8 +131,41 @@
         <p id="applicant-disbursement-amount" hidden></p>
         <p id="applicant-cost"></p>
       </div>
-      <p>Para ver cómo les llegó, cambia al perfil de prueba de una persona que confirmó.</p>
+      <p id="application-profile-hint">Para ver cómo les llegó, cambia al perfil de prueba de una persona que confirmó.</p>
+      <button type="button" id="simulate-installment" hidden>Simular la siguiente cuota</button>
       <button type="button" id="edit-revision" class="secondary">Preparar una nueva versión</button>
+    </section>
+
+    <section class="card" id="installment" aria-labelledby="installment-title" hidden>
+      <h1 id="installment-title" tabindex="-1">Cuota pendiente</h1>
+      <p id="installment-denied" hidden>Este perfil no tiene acceso al ejemplo de la cuota. Elige a Diana o a una persona que confirmó su respaldo.</p>
+      <div class="installment-content" id="installment-content">
+        <p>El importe de esta cuota pertenece a un ejemplo ficticio independiente del préstamo anterior.</p>
+        <div class="actions" id="installment-variants" role="group" aria-label="Ejemplo de cuota" hidden>
+          <button type="button" class="secondary" data-variant="reserve">Con reserva</button>
+          <button type="button" class="secondary" data-variant="empty">Bolsa vacía</button>
+        </div>
+        <p class="callout" id="installment-status"></p>
+        <div class="installment-content" id="installment-applicant" hidden>
+          <dl class="facts" id="installment-breakdown"></dl>
+          <ul class="member-list" id="installment-contributions" aria-label="Aportes del grupo"></ul>
+          <h2>Saldos de la bolsa</h2>
+          <dl class="facts" id="installment-balances"></dl>
+        </div>
+        <p id="installment-vote" hidden></p>
+        <div class="actions" id="reserve-actions" hidden>
+          <button type="button" data-reserve-vote="approve">Votar a favor de usar la reserva</button>
+          <button type="button" data-reserve-vote="reject" class="secondary">Votar en contra de usar la reserva</button>
+        </div>
+        <dl class="facts" id="installment-own" hidden></dl>
+        <div class="actions" id="contribution-actions" hidden>
+          <button type="button" data-contribution="paid">Simular aporte pagado</button>
+          <button type="button" data-contribution="failed" class="secondary">Simular aporte fallido</button>
+        </div>
+        <p id="installment-next-hint" hidden></p>
+        <button type="button" id="installment-next" hidden></button>
+      </div>
+      <button type="button" id="installment-profile" class="secondary" hidden>Ir al selector de perfiles</button>
     </section>
 
     <section class="card" id="finance" aria-labelledby="finance-title" hidden>
@@ -197,6 +237,10 @@
         <button type="button" data-decision="reject" class="secondary">Votar en contra</button>
         <button type="button" data-decision="pause" class="secondary">Dejar pendiente para reunión</button>
         <button type="button" data-decision="resume">Retomar votación</button>
+      </div>
+      <div class="actions" id="guided-after-vote" hidden>
+        <p>El desembolso simulado quedó registrado. Vuelve a Diana para simular la siguiente cuota.</p>
+        <button type="button" id="guided-return">Volver al perfil de Diana</button>
       </div>
       <div class="decision-history" id="sheet-history" hidden>
         <h2>Rondas anteriores de esta versión</h2>

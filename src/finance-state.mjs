@@ -29,14 +29,27 @@ function creditBalance(state) {
   );
 }
 
+export function projectCircleFund({ opening = circleFund, reserveOutflowCop = 0 } = {}) {
+  const balanceCop = opening.balanceCop - reserveOutflowCop;
+  const reserveCop = opening.reserveCop - reserveOutflowCop;
+  const availableCop = balanceCop - reserveCop - opening.commitmentsCop;
+  return { ...opening, balanceCop, reserveCop, availableCop };
+}
+
 export function getFinanceDashboard(state, profileId) {
   if (!canViewFinance(state, profileId)) return null;
-
-  const { balanceCop, reserveCop, commitmentsCop } = circleFund;
   return {
-    fund: { ...circleFund, availableCop: balanceCop - reserveCop - commitmentsCop },
+    fund: projectCircleFund(),
     budget: { ...initialBudget, creditCop: creditBalance(state) },
   };
+}
+
+export function getOperationVoteStatus(electorate, votes) {
+  const approvals = electorate.filter((id) => votes[id] === 'approve').length;
+  const rejected = electorate.some((id) => votes[id] === 'reject');
+  const unanimous = approvals > 0 && approvals === electorate.length;
+  const status = rejected ? 'rejected' : unanimous ? 'approved' : 'waiting';
+  return { approvals, status };
 }
 
 export function getDisbursementStatus(state, authorization) {
