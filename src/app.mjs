@@ -10,6 +10,9 @@ import {
 import {
   getInstallmentCase, installmentSupporters, simulateInstallmentContribution, voteOnInstallmentReserve,
 } from './installment-state.mjs';
+import {
+  canViewProject, confirmProjectTransfer, getProjectCase, submitProjectProposal, validateProjectProposal, voteOnProject,
+} from './project-state.mjs';
 
 const storageKey = 'credito-comunitario-hu-1-1';
 const presentationKey = 'credito-comunitario-hu-2-2';
@@ -34,6 +37,7 @@ const votingStatus = {
 const byId = (id) => document.getElementById(id);
 const profile = byId('profile');
 const draftForm = byId('draft-form');
+const projectForm = byId('project-form');
 const inviteForm = byId('invite-form');
 const invitee = byId('invitee');
 const responseForm = byId('response-form');
@@ -260,6 +264,7 @@ function renderFinance({ fund, budget }) {
     'budget-staff': budget.staffCop,
   };
   for (const [id, amount] of Object.entries(figures)) byId(id).textContent = money(amount);
+  byId('open-project').hidden = !canViewProject(profile.value);
 }
 
 function renderFacts(id, entries) {
@@ -271,6 +276,86 @@ function renderFacts(id, entries) {
     value.textContent = money(amount);
     row.append(term, value);
     return row;
+  }));
+}
+
+function readProjectDraft() {
+  return [projectForm.elements.purpose.value, projectForm.elements.amount.valueAsNumber];
+}
+
+function renderProjectValidation(result) {
+  const error = byId('project-error');
+  error.textContent = {
+    'missing-purpose': 'Escribe la finalidad de la propuesta.',
+    'invalid-amount': 'Ingresa un importe positivo en pesos enteros.',
+    'exceeds-available': result.excessCop ? `El importe excede el disponible en ${money(result.excessCop)}.` : '',
+    blocked: 'Este perfil no puede enviar una propuesta ahora.',
+  }[result.status] ?? '';
+  error.hidden = !error.textContent;
+  projectForm.elements.purpose.setAttribute('aria-invalid', String(result.status === 'missing-purpose'));
+  projectForm.elements.amount.setAttribute('aria-invalid', String(['invalid-amount', 'exceeds-available'].includes(result.status)));
+}
+
+function renderProjectProposal(proposal) {
+  const heading = document.createElement('h2');
+  heading.textContent = `Propuesta ${proposal.id}`;
+  const purpose = document.createElement('p');
+  purpose.textContent = proposal.purpose;
+  const amount = document.createElement('strong');
+  amount.textContent = money(proposal.amountCop);
+  const roster = document.createElement('ul');
+  roster.className = 'member-list';
+  roster.setAttribute('aria-label', 'Padrón y votos de la propuesta');
+  for (const id of proposal.electorate) {
+    const item = document.createElement('li');
+    const vote = document.createElement('span');
+    vote.textContent = { approve: 'A favor', reject: 'En contra' }[proposal.votes[id]] ?? 'Sin votar';
+    item.append(supporters.find(({ id: supporterId }) => supporterId === id).name, vote);
+    roster.append(item);
+  }
+  return [heading, purpose, amount, roster];
+}
+
+function renderProject() {
+  const example = getProjectCase(state, profile.value);
+  byId('project-content').hidden = !example;
+  byId('project-denied').hidden = Boolean(example);
+  if (!example) return;
+
+  const { fund, current, history, canPropose, canVote, canConfirm } = example;
+  renderFacts('project-balances', [
+    ['Saldo', fund.balanceCop], ['Reserva', fund.reserveCop],
+    ['Compromisos', fund.commitmentsCop], ['Disponible para proyectos', fund.availableCop],
+  ]);
+  byId('project-status').textContent = current ? {
+    waiting: `${current.approvals} de ${current.electorate.length} votos a favor. El giro requiere unanimidad.`,
+    rejected: 'Hubo un voto en contra. El giro quedó bloqueado y el grupo puede enviar otra propuesta.',
+    approved: current.amountCop <= fund.availableCop
+      ? 'El grupo aprobó la propuesta por unanimidad. Falta confirmar el giro.'
+      : 'El grupo aprobó la propuesta por unanimidad. El giro quedó bloqueado por saldo insuficiente.',
+    recorded: `Giro de ${money(current.movement?.amountCop ?? current.amountCop)} registrado para la propuesta ${current.id}.`,
+  }[current.status] : 'El grupo artístico puede proponer un gasto con el saldo disponible.';
+  const sheet = byId('project-current');
+  sheet.hidden = !current;
+  sheet.replaceChildren(...(current ? renderProjectProposal(current) : []));
+
+  const voteActions = byId('project-vote-actions');
+  voteActions.hidden = !canVote;
+  voteActions.dataset.proposalId = current?.id ?? '';
+  const confirm = byId('project-confirm');
+  confirm.hidden = !canConfirm;
+  confirm.dataset.proposalId = current?.id ?? '';
+  confirm.textContent = canConfirm ? `Confirmar giro de ${money(current.amountCop)}` : '';
+  projectForm.hidden = !canPropose;
+  if (canPropose) renderProjectValidation(validateProjectProposal(state, ...readProjectDraft()));
+
+  byId('project-history').hidden = history.length === 0;
+  byId('project-history-list').replaceChildren(...history.map((proposal) => {
+    const entry = document.createElement('article');
+    const outcome = document.createElement('p');
+    outcome.textContent = proposal.movement ? 'Giro registrado' : 'Propuesta rechazada';
+    entry.append(...renderProjectProposal(proposal), outcome);
+    return entry;
   }));
 }
 
@@ -423,7 +508,9 @@ function show(requestedView, moveFocus = true) {
   const installmentAllowed = !guided || Boolean(getRecordedDisbursement(state));
   let view = requestedView;
 
-  if (view === 'installment' && installmentAllowed) {
+  if (view === 'project') {
+    renderProject();
+  } else if (view === 'installment' && installmentAllowed) {
     renderInstallment();
   } else if (view === 'finance' && financeAllowed) {
     renderFinance(getFinanceDashboard(state, profile.value));
@@ -457,11 +544,14 @@ function show(requestedView, moveFocus = true) {
 
   navigation.hidden = false;
   byId('guided-vote').hidden = installmentAllowed || (profile.value === guidedVoter && view === 'sheet');
-  const navView = ['finance', 'installment'].includes(view) ? view : isApplicant ? 'application' : view === 'sheet' ? 'inbox' : view;
+  const navView = view === 'project' && financeAllowed ? 'finance'
+    : ['finance', 'installment', 'project'].includes(view) ? view
+      : isApplicant ? 'application' : view === 'sheet' ? 'inbox' : view;
   for (const button of navigation.querySelectorAll('[data-go]')) {
     const destination = button.dataset.go;
     button.hidden = destination === 'finance' ? !financeAllowed : destination === 'installment' ? !installmentAllowed
-      : (destination === 'application') !== isApplicant;
+      : destination === 'project' ? financeAllowed || !canViewProject(profile.value)
+        : (destination === 'application') !== isApplicant;
     if (destination === navView) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
   }
@@ -516,31 +606,58 @@ for (const reason of reasons) {
   byId('reasons').append(label);
 }
 
-function showProfile(moveFocus) {
+function showProfile(moveFocus, destination) {
   selectedVersion = null;
   const returnToVote = guided && profile.value === guidedVoter && !getRecordedDisbursement(state);
   if (returnToVote) selectedVersion = getInbox(state, guidedVoter).find(({ isCurrent }) => isCurrent)?.version ?? null;
-  const view = returnToVote ? 'sheet' : currentView === 'installment' ? currentView
-    : profile.value === applicant.id ? applicantView : state.sent ? 'inbox' : 'support';
+  const view = destination ?? (currentView === 'project' ? currentView : returnToVote ? 'sheet'
+    : currentView === 'installment' ? currentView : profile.value === applicant.id ? applicantView : state.sent ? 'inbox' : 'support');
   show(view, moveFocus);
   const name = profile.selectedOptions[0].textContent;
   const title = byId(`${currentView}-title`).textContent;
   announce(`Perfil de prueba: ${name}. ${title}.`);
 }
 
-function switchProfile(id) {
+function switchProfile(id, destination) {
   profile.value = id;
-  showProfile(true);
+  showProfile(true, destination);
 }
 
 profile.addEventListener('change', () => showProfile(false));
 
 byId('choose-invited').addEventListener('click', () => profile.focus());
 byId('installment-profile').addEventListener('click', () => profile.focus());
+byId('project-profile').addEventListener('click', () => profile.focus());
+projectForm.addEventListener('input', () => renderProjectValidation(validateProjectProposal(state, ...readProjectDraft())));
+projectForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const result = submitProjectProposal(state, profile.value, ...readProjectDraft());
+  if (result.status !== 'submitted') {
+    renderProjectValidation(result);
+    return;
+  }
+  projectForm.reset();
+  saveState();
+  show('project');
+  announce(byId('project-status').textContent);
+});
+byId('project-vote-actions').addEventListener('click', (event) => {
+  const id = Number(event.currentTarget.dataset.proposalId);
+  if (!voteOnProject(state, profile.value, id, event.target.dataset.projectVote)) return;
+  saveState();
+  show('project');
+  announce(byId('project-status').textContent);
+});
+byId('project-confirm').addEventListener('click', (event) => {
+  const result = confirmProjectTransfer(state, profile.value, Number(event.currentTarget.dataset.proposalId));
+  if (result.created) saveState();
+  show('project');
+  announce(byId('project-status').textContent);
+});
 byId('start-demo').addEventListener('click', () => openJourney(true));
 byId('reset-demo').addEventListener('click', () => openJourney(true, true));
 byId('exit-demo').addEventListener('click', () => openJourney(false));
-byId('guided-vote').addEventListener('click', () => switchProfile(guidedVoter));
+byId('guided-vote').addEventListener('click', () => switchProfile(guidedVoter, 'sheet'));
 byId('guided-return').addEventListener('click', () => switchProfile(applicant.id));
 byId('simulate-installment').addEventListener('click', () => {
   installmentVariant = 'reserve';
@@ -691,5 +808,5 @@ byId('send-form').addEventListener('submit', (event) => {
   }
 });
 
-if (!guided && presentation.normalNavigation?.view !== 'installment') delete presentation.normalNavigation;
+if (!guided && !['installment', 'project'].includes(presentation.normalNavigation?.view)) delete presentation.normalNavigation;
 openJourney(guided, false, false);

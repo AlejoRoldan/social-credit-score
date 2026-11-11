@@ -130,8 +130,18 @@ button:disabled { background: #e8eeea; color: #425c53; border-color: #789087; cu
 .member-list li { display: flex; flex-wrap: wrap; gap: .25rem 1rem; justify-content: space-between; }
 .member-list span { color: var(--muted); }
 .facts dd { margin: 0; }
-#finance h2, #installment h2 { margin: 0; font-size: 1.25rem; }
-.installment-content { display: grid; gap: 1rem; }
+#finance h2, #installment h2, #project h2 { margin: 0; font-size: 1.25rem; }
+.installment-content, .project-content { display: grid; gap: 1rem; }
+#project-form input {
+  min-block-size: 44px;
+  width: 100%;
+  border: 1px solid var(--green);
+  border-radius: .5rem;
+  padding: .625rem .875rem;
+  font: inherit;
+}
+#project-error { color: #8b3700; }
+#project-history summary { min-block-size: 44px; padding-block: .625rem; cursor: pointer; }
 .finance-available {
   padding-inline: .75rem;
   border-radius: .5rem;

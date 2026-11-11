@@ -29,17 +29,22 @@ function creditBalance(state) {
   );
 }
 
-export function projectCircleFund({ opening = circleFund, reserveOutflowCop = 0 } = {}) {
-  const balanceCop = opening.balanceCop - reserveOutflowCop;
+export function projectCircleFund({ opening = circleFund, reserveOutflowCop = 0, projectOutflowCop = 0 } = {}) {
+  const balanceCop = opening.balanceCop - reserveOutflowCop - projectOutflowCop;
   const reserveCop = opening.reserveCop - reserveOutflowCop;
   const availableCop = balanceCop - reserveCop - opening.commitmentsCop;
   return { ...opening, balanceCop, reserveCop, availableCop };
 }
 
+export function getProjectFund(state) {
+  const projectOutflowCop = (state.projectCase?.movements ?? []).reduce((total, { amountCop }) => total + amountCop, 0);
+  return projectCircleFund({ projectOutflowCop });
+}
+
 export function getFinanceDashboard(state, profileId) {
   if (!canViewFinance(state, profileId)) return null;
   return {
-    fund: projectCircleFund(),
+    fund: getProjectFund(state),
     budget: { ...initialBudget, creditCop: creditBalance(state) },
   };
 }
