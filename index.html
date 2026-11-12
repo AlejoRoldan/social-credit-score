@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crédito comunitario · Demo</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./src/app.mjs"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="shell">
+      <p class="brand">Crédito comunitario</p>
+      <div class="demo-controls">
+        <label for="profile">Cambiar perfil de prueba</label>
+        <select id="profile" aria-describedby="demo-note"></select>
+        <p id="demo-note">Demo con personas y montos ficticios.</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <p id="announcement" class="sr-only" role="status"></p>
+    <noscript>Activa JavaScript para recorrer la demo.</noscript>
+    <nav id="support-navigation" aria-label="Vistas del respaldante" hidden>
+      <button type="button" class="secondary" data-go="support">Mi respaldo</button>
+      <button type="button" class="secondary" data-go="inbox">Bandeja</button>
+    </nav>
+
+    <section class="card" id="needs" aria-labelledby="needs-title" hidden>
+      <p class="eyebrow">Paso 1 de 3</p>
+      <h1 id="needs-title" tabindex="-1">Cuéntanos qué necesitas</h1>
+      <p>Elige las opciones para la solicitud de Diana.</p>
+      <form id="draft-form">
+        <label for="amount">¿Cuánto necesitas en pesos (COP)?</label>
+        <select id="amount" name="amount" required></select>
+        <fieldset id="reasons">
+          <legend>¿Para qué lo necesitas?</legend>
+        </fieldset>
+        <label for="weeks">¿En cuántas semanas pagarías?</label>
+        <select id="weeks" name="weeks" required></select>
+        <p>Harías un pago cada semana.</p>
+        <button type="submit">Continuar al grupo</button>
+      </form>
+    </section>
+
+    <section class="card" id="circle" aria-labelledby="circle-title" hidden>
+      <p class="eyebrow">Paso 2 de 3</p>
+      <h1 id="circle-title" tabindex="-1">Reúne tu grupo</h1>
+      <p>Necesitas al menos cinco personas que acepten respaldarte.</p>
+      <p class="callout" id="progress"></p>
+      <div id="pending-hint" class="actions">
+        <p>En la demo puedes responder desde el perfil de una persona invitada.</p>
+        <button type="button" id="choose-invited" class="secondary">Ir al selector de perfiles</button>
+      </div>
+      <ul id="circle-members" class="member-list" aria-label="Personas invitadas"></ul>
+      <form id="invite-form">
+        <label for="invitee">Invitar a otra persona de prueba</label>
+        <div class="actions">
+          <select id="invitee" name="invitee" required></select>
+          <button type="submit" class="secondary">Invitar</button>
+        </div>
+      </form>
+      <div class="actions">
+        <button type="button" class="secondary" data-go="needs">Volver</button>
+        <button type="button" data-go="review" id="review-button" aria-describedby="progress">Revisar solicitud</button>
+      </div>
+    </section>
+
+    <section class="card" id="review" aria-labelledby="review-title" hidden>
+      <p class="eyebrow">Paso 3 de 3</p>
+      <h1 id="review-title" tabindex="-1">Revisa y envía</h1>
+      <p>Revisa los datos que recibirá tu grupo.</p>
+      <div class="callout total">
+        <p>Cuánto pagarías en total</p>
+        <strong data-field="total"></strong>
+      </div>
+      <dl class="facts">
+        <div><dt>Monto solicitado</dt><dd data-field="amount"></dd></div>
+        <div><dt>Razón de la solicitud</dt><dd data-field="reason"></dd></div>
+        <div><dt>Plazo</dt><dd data-field="weeks"></dd></div>
+        <div><dt>Frecuencia de pago</dt><dd data-field="frequency"></dd></div>
+        <div><dt>Valor de cada cuota</dt><dd data-field="installment"></dd></div>
+        <div><dt>Intereses de ejemplo</dt><dd data-field="interest"></dd></div>
+      </dl>
+      <p id="review-recipients"></p>
+      <form id="send-form" class="actions">
+        <button type="button" class="secondary" data-go="needs">Corregir datos</button>
+        <button type="submit">Enviar solicitud al grupo</button>
+      </form>
+    </section>
+
+    <section class="card" id="success" aria-labelledby="success-title" hidden>
+      <p class="eyebrow">Solicitud de prueba</p>
+      <h1 id="success-title" tabindex="-1">Solicitud enviada al grupo</h1>
+      <p>Las personas que confirmaron su respaldo recibieron la ficha en su bandeja. Ahora el grupo revisará tu solicitud.</p>
+      <p>Para ver cómo les llegó, cambia al perfil de prueba de una persona que confirmó.</p>
+    </section>
+
+    <section class="card" id="support" aria-labelledby="support-title" hidden>
+      <p class="eyebrow">Círculo de Diana</p>
+      <h1 id="support-title" tabindex="-1">Mi respaldo</h1>
+      <p>Tu estado: <strong data-support-status></strong></p>
+      <div id="commitment" class="callout">
+        <p>Si Diana no puede pagar, tu aporte sería de hasta <strong data-limit></strong>.</p>
+      </div>
+      <p id="support-explanation"></p>
+      <form id="response-form" class="actions" hidden>
+        <button type="submit" name="response" value="confirmed">Aceptar respaldo</button>
+        <button type="submit" name="response" value="declined" class="secondary">No aceptar</button>
+      </form>
+    </section>
+
+    <section class="card" id="inbox" aria-labelledby="inbox-title" hidden>
+      <p class="eyebrow">Círculo de Diana</p>
+      <h1 id="inbox-title" tabindex="-1">Bandeja</h1>
+      <p>Tu estado: <strong data-support-status></strong></p>
+      <p id="inbox-empty">Por ahora no tienes avisos.</p>
+      <div id="notice" class="callout" hidden>
+        <p id="notice-title"></p>
+        <button type="button" data-go="sheet">Abrir ficha de la solicitud</button>
+      </div>
+    </section>
+
+    <section class="card" id="sheet" aria-labelledby="sheet-title" hidden>
+      <p class="eyebrow">Ficha de la solicitud</p>
+      <h1 id="sheet-title" tabindex="-1">Solicitud de <span id="applicant-name"></span></h1>
+      <p id="applicant-summary"></p>
+      <p id="applicant-history"></p>
+      <div class="callout">
+        <p>Tu aporte máximo si Diana no puede pagar</p>
+        <strong data-limit></strong>
+      </div>
+      <dl class="facts">
+        <div><dt>Razón de la solicitud</dt><dd data-field="reason"></dd></div>
+        <div><dt>Monto solicitado</dt><dd data-field="amount"></dd></div>
+        <div><dt>Plazo</dt><dd data-field="weeks"></dd></div>
+        <div><dt>Frecuencia de pago</dt><dd data-field="frequency"></dd></div>
+        <div><dt>Valor de cada cuota</dt><dd data-field="installment"></dd></div>
+        <div><dt>Intereses de ejemplo</dt><dd data-field="interest"></dd></div>
+        <div><dt>Total que pagaría Diana</dt><dd data-field="total"></dd></div>
+      </dl>
+      <button type="button" class="secondary" data-go="inbox">Volver a la bandeja</button>
+    </section>
+  </main>
+</body>
+</html>

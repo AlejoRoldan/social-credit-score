@@ -2,7 +2,29 @@
 
 Proyecto en fase de diseño para explorar préstamos de bajo monto respaldados por círculos de confianza. La primera prueba será una demo navegable con datos ficticios para personas con ingresos variables y sin cuenta bancaria en Medellín. Se plantea como alternativa al pagadiario o gota a gota.
 
-La demo recorre la solicitud y su votación, el uso de la bolsa del círculo ante una cuota impaga y una propuesta de proyecto colectivo. El grupo recibe la ficha por la app y puede aprobar, dejar pendiente para reunirse o rechazar. Tras una reunión, cada respaldante registra su voto sobre la misma versión. El aporte inicial propuesto de inversión de impacto separa el capital de crédito del presupuesto de plataforma y personal.
+El alcance previsto de la demo abarca la solicitud y su votación, el uso de la bolsa del círculo ante una cuota impaga y una propuesta de proyecto colectivo. El primer recorrido disponible, HU 1.1, permite preparar una solicitud de ejemplo y entregar su ficha a las personas que confirmaron su respaldo.
+
+## Probar la HU 1.1
+
+Desde la raíz del repositorio, inicia el servidor local con Python y abre la demo en el navegador. Ejecuta las pruebas de reglas con Node.js en otra terminal.
+
+```sh
+python -m http.server 8000 --bind 127.0.0.1
+```
+
+[Abrir la demo](http://127.0.0.1:8000/)
+
+```sh
+node --test
+```
+
+1. Como Diana, elige monto, razón y plazo y continúa. Comprueba que cuatro personas confirmaron, Luz tiene una invitación pendiente y «Revisar solicitud» está desactivado.
+2. En «Cambiar perfil de prueba», elige Luz. Lee el tope de $10.000 COP y el caso en que tendría que aportar. Para probar el rechazo, elige «No aceptar», vuelve a Diana y comprueba que el contador sigue en cuatro. Invita a Mateo desde el grupo y cambia a su perfil para aceptar. En el recorrido directo, acepta como Luz.
+3. Vuelve a Diana y abre «Revisa y envía». Comprueba monto, razón, plazo, frecuencia, cuota, intereses de ejemplo y total. Entra a «Corregir datos», comprueba que se mantienen las opciones anteriores, ajusta una y revisa nuevamente antes de enviar.
+4. Envía la solicitud. Cambia a Ana y abre el único aviso de su bandeja. Comprueba el resumen de Diana, la ausencia de historial, las condiciones enviadas y el tope propio. Cambia a un perfil sin confirmar y comprueba su estado y la bandeja vacía. Para probar el caso pendiente, deja una invitación adicional sin responder antes de enviar.
+5. Repite el recorrido a 320 px de ancho, con teclado o tacto, y al 200 % de tamaño de texto. Comprueba el foco visible, los estados escritos y que el contenido cabe en el ancho disponible.
+
+La demo conserva el borrador, el grupo y la ficha enviada en la sesión de la pestaña, incluso al recargar. Abre la dirección en una ventana privada nueva para empezar desde el principio.
 
 ## Documentación
 
