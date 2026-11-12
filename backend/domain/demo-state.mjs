@@ -25,7 +25,7 @@ export const reasons = Object.freeze([
 
 export const minimumSupporters = 5;
 export const contributionLimit = 10_000;
-const weeklyCostLimit = 0.02;
+const weeklyCostLimitPercent = 2;
 const firstInstallmentDueDate = '2026-11-23';
 const installmentIntentions = ['plan-to-pay', 'need-to-talk'];
 
@@ -48,6 +48,27 @@ function validDetails({ amount, reason, weeks }) {
   return amounts.includes(amount) && reasons.includes(reason) && terms.includes(weeks);
 }
 
+function isRecord(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isStoredVersion(version, allowLegacy = false) {
+  if (!isRecord(version) || !isRecord(version.application) || !validDetails(version.application) ||
+      typeof version.application.applicant?.name !== 'string' || !isRecord(version.recipients)) return false;
+
+  if (allowLegacy && version.rounds === undefined) return true;
+  return Number.isInteger(version.version) && Array.isArray(version.rounds) && version.rounds.length > 0 &&
+    version.rounds.every((round) => isRecord(round) && isRecord(round.votes));
+}
+
+export function isStoredDemoState(state) {
+  return isRecord(state) && isRecord(state.draft) && validDetails(state.draft) &&
+    isRecord(state.circle) && Object.values(state.circle).every((status) => ['confirmed', 'pending', 'declined'].includes(status)) &&
+    (state.sent == null || isStoredVersion(state.sent, true)) &&
+    (state.previousVersions === undefined ||
+      (Array.isArray(state.previousVersions) && state.previousVersions.every((version) => isStoredVersion(version))));
+}
+
 export function loanDetails({ amount, reason, weeks }) {
   const interest = amount / 10;
   const total = amount + interest;
@@ -55,8 +76,12 @@ export function loanDetails({ amount, reason, weeks }) {
 }
 
 export function checkCost({ amount, weeks, interest }) {
-  const weeklyRate = interest / (amount * weeks);
-  return { weeklyRate, limit: weeklyCostLimit, withinLimit: weeklyRate <= weeklyCostLimit };
+  const principalWeeks = amount * weeks;
+  return {
+    weeklyRate: interest / principalWeeks,
+    limit: weeklyCostLimitPercent / 100,
+    withinLimit: principalWeeks > 0 && interest * 100 <= principalWeeks * weeklyCostLimitPercent,
+  };
 }
 
 export function getSupportStatus(state, profileId) {
@@ -206,8 +231,8 @@ export function getInbox(state, profileId) {
   return [...(state.previousVersions ?? []), current].reverse()
     .filter(({ recipients }) => Object.hasOwn(recipients, profileId))
     .map(({ application, recipients, version, rounds }) => ({
-      title: 'Diana envió su solicitud',
-      application,
+      title: `${application.applicant.name} envió su solicitud`,
+      application: structuredClone(application),
       limit: recipients[profileId],
       version,
       isCurrent: version === current.version,

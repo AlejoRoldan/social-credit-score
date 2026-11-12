@@ -1,13 +1,13 @@
 import { getFinanceDashboard } from './finance-state.mjs';
 
-const anaScore = Object.freeze({
+const individualScoreExamples = new Map([['ana', Object.freeze({
   value: 82,
   history: Object.freeze({
     compliance: '9 de 10 pagos a tiempo',
     commitments: '2 compromisos completados',
     membership: '12 meses de vínculo',
   }),
-});
+})]]);
 
 const circleExample = Object.freeze({
   value: 78,
@@ -42,7 +42,7 @@ export const scoreComparisonExamples = Object.freeze([
 ]);
 
 export function getOwnScore(profileId) {
-  return profileId === 'ana' ? anaScore : null;
+  return individualScoreExamples.get(profileId) ?? null;
 }
 
 export function getCircleScore(state, profileId) {

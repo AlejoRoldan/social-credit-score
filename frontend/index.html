@@ -3,15 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Crédito comunitario · Demo</title>
+  <title>Entrevecinos · Crédito comunitario</title>
+  <link rel="stylesheet" href="../design-system/tokens.css">
   <link rel="stylesheet" href="./styles.css">
   <script type="module" src="./src/app.mjs"></script>
 </head>
 <body>
   <header class="site-header">
     <div class="shell">
-      <p class="brand">Crédito comunitario</p>
-      <div class="demo-controls">
+      <p class="brand">entrevecinos</p>
+      <div class="demo-controls" hidden>
         <label for="profile">Cambiar perfil de prueba</label>
         <select id="profile" aria-describedby="demo-note"></select>
         <p id="demo-note">Demo con personas y montos ficticios.</p>
@@ -27,7 +28,7 @@
 
   <main class="shell">
     <p id="announcement" class="sr-only" role="status"></p>
-    <noscript>Activa JavaScript para recorrer la demo.</noscript>
+    <p id="startup-message" class="callout callout-attention">Si la demo no carga, activa JavaScript y ejecuta <code>node serve.mjs</code> desde la carpeta del proyecto. Luego abre <a href="http://127.0.0.1:8000/">la demo en el servidor local</a>.</p>
     <nav id="navigation" aria-label="Vistas del perfil" hidden>
       <button type="button" class="secondary" data-go="application">Mi solicitud</button>
       <button type="button" class="secondary" data-go="support">Mi respaldo</button>
@@ -41,7 +42,7 @@
     <section class="card" id="needs" aria-labelledby="needs-title" hidden>
       <p class="eyebrow" id="needs-step">Paso 1 de 3</p>
       <h1 id="needs-title" tabindex="-1">Cuéntanos qué necesitas</h1>
-      <p id="needs-description">Elige las opciones para la solicitud de Diana.</p>
+      <p id="needs-description">Elige las opciones para la solicitud de <span data-applicant-name></span>.</p>
       <form id="draft-form">
         <label for="amount">¿Cuánto necesitas en pesos (COP)?</label>
         <select id="amount" name="amount" required></select>
@@ -56,12 +57,16 @@
           <p id="electorate-hint">Elige al menos cinco personas que confirmaron su respaldo.</p>
           <div id="revision-choices"></div>
         </fieldset>
-        <dl class="facts" id="revision-preview" aria-live="polite" aria-atomic="true" hidden>
-          <div><dt>Valor de cada cuota semanal</dt><dd data-field="installment"></dd></div>
-          <div><dt>Intereses de ejemplo</dt><dd data-field="interest"></dd></div>
-          <div><dt>Tasa ilustrativa prorrateada por semana</dt><dd data-field="weeklyRate"></dd></div>
-          <div><dt>Total que pagarías</dt><dd data-field="total"></dd></div>
-        </dl>
+        <div id="revision-preview" aria-live="polite" aria-atomic="true" hidden>
+          <dl class="facts">
+            <div><dt>Valor de cada cuota semanal</dt><dd data-field="installment"></dd></div>
+            <div><dt>Intereses de ejemplo</dt><dd data-field="interest"></dd></div>
+            <div><dt>Tasa ilustrativa prorrateada por semana</dt><dd data-field="weeklyRate"></dd></div>
+            <div><dt>Total que pagarías</dt><dd data-field="total"></dd></div>
+          </dl>
+          <p class="callout callout-attention" data-cost-warning hidden></p>
+          <p>La tasa y el límite son ejemplos de esta simulación. No constituyen una oferta de crédito.</p>
+        </div>
         <p id="revision-error" role="alert" hidden></p>
         <div class="actions">
           <button type="button" class="secondary" id="cancel-revision" data-go="success" hidden>Volver al estado</button>
@@ -111,6 +116,8 @@
         <div><dt>Tasa ilustrativa prorrateada por semana</dt><dd data-field="weeklyRate"></dd></div>
       </dl>
       <p id="review-recipients"></p>
+      <p class="callout callout-attention" data-cost-warning hidden></p>
+      <p>La tasa y el límite son ejemplos de esta simulación. No constituyen una oferta de crédito.</p>
       <form id="send-form" class="actions">
         <button type="button" class="secondary" data-go="needs" id="edit-draft">Corregir datos</button>
         <button type="submit">Enviar solicitud al grupo</button>
@@ -157,14 +164,14 @@
 
     <section class="card" id="installment" aria-labelledby="installment-title" hidden>
       <h1 id="installment-title" tabindex="-1">Cuota pendiente</h1>
-      <p id="installment-denied" hidden>Este perfil no tiene acceso al ejemplo de la cuota. Elige a Diana o a una persona que confirmó su respaldo.</p>
+      <p id="installment-denied" hidden>Este perfil no tiene acceso al ejemplo de la cuota. Elige a <span data-applicant-name></span> o a una persona que confirmó su respaldo.</p>
       <div class="installment-content" id="installment-content">
         <p>El importe de esta cuota pertenece a un ejemplo ficticio independiente del préstamo anterior.</p>
         <div class="actions" id="installment-variants" role="group" aria-label="Ejemplo de cuota" hidden>
           <button type="button" class="secondary" data-variant="reserve">Con reserva</button>
           <button type="button" class="secondary" data-variant="empty">Bolsa vacía</button>
         </div>
-        <p class="callout" id="installment-status"></p>
+        <p class="callout callout-attention" id="installment-status"></p>
         <div class="installment-content" id="installment-applicant" hidden>
           <dl class="facts" id="installment-breakdown"></dl>
           <ul class="member-list" id="installment-contributions" aria-label="Aportes del grupo"></ul>
@@ -191,7 +198,7 @@
       <h1 id="score-title" tabindex="-1">Mi puntaje</h1>
       <div id="own-score-insufficient" class="callout" hidden>
         <p><strong>Historial insuficiente</strong></p>
-        <p>Faltan datos para mostrar un puntaje.</p>
+        <p>Este perfil de prueba muestra qué verías cuando aún faltan datos para calcular tu puntaje individual.</p>
       </div>
       <div id="own-score-result" class="score-content" hidden>
         <p class="callout total">Puntaje ficticio <strong id="own-score-value"></strong></p>
@@ -217,7 +224,7 @@
       <h1 id="finance-title" tabindex="-1">Bolsa del círculo</h1>
       <h2>Puntaje del círculo</h2>
       <p class="callout total">Puntaje ficticio <strong id="circle-score-value"></strong></p>
-      <p>Estas cifras resumen el historial del grupo. Muestran cuántos pagos llegaron a tiempo, cuántos compromisos se completaron y cuánto tiempo llevan en promedio sus integrantes en el círculo.</p>
+      <p>Estas cifras ilustran cómo se resume el historial de un círculo. Son datos de ejemplo independientes de los puntajes individuales de la demo.</p>
       <dl class="facts" aria-label="Señales agregadas ficticias">
         <div><dt>Cumplimiento</dt><dd id="circle-score-compliance"></dd></div>
         <div><dt>Compromisos</dt><dd id="circle-score-commitments"></dd></div>
@@ -257,7 +264,7 @@
           <label for="project-purpose">Finalidad</label>
           <input id="project-purpose" name="purpose" value="Materiales para un taller" aria-describedby="project-error" required>
           <label for="project-amount">Importe en COP</label>
-          <input id="project-amount" name="amount" type="number" inputmode="numeric" min="1" step="1" value="50000" aria-describedby="project-error" required>
+          <input id="project-amount" name="amount" type="number" inputmode="numeric" min="1" step="1" aria-describedby="project-error" required>
           <p id="project-error" aria-live="polite" hidden></p>
           <button type="submit">Enviar propuesta</button>
         </form>
@@ -270,11 +277,11 @@
     </section>
 
     <section class="card" id="support" aria-labelledby="support-title" hidden>
-      <p class="eyebrow">Círculo de Diana</p>
+      <p class="eyebrow">Círculo de <span data-applicant-name></span></p>
       <h1 id="support-title" tabindex="-1">Mi respaldo</h1>
       <p>Tu estado: <strong data-support-status></strong></p>
       <div id="commitment" class="callout">
-        <p>Si Diana no puede pagar, tu aporte sería de hasta <strong data-limit></strong>.</p>
+        <p>Si <span data-applicant-name></span> no puede pagar, tu aporte sería de hasta <strong data-limit></strong>.</p>
       </div>
       <p id="support-explanation"></p>
       <form id="response-form" class="actions" hidden>
@@ -284,7 +291,7 @@
     </section>
 
     <section class="card" id="inbox" aria-labelledby="inbox-title" hidden>
-      <p class="eyebrow">Círculo de Diana</p>
+      <p class="eyebrow">Círculo de <span data-applicant-name></span></p>
       <h1 id="inbox-title" tabindex="-1">Bandeja</h1>
       <p>Tu estado: <strong data-support-status></strong></p>
       <p id="inbox-empty">Por ahora no tienes avisos.</p>
@@ -303,7 +310,7 @@
       <p id="applicant-summary"></p>
       <p id="applicant-history"></p>
       <div class="callout">
-        <p>Tu aporte máximo si Diana no puede pagar</p>
+        <p>Tu aporte máximo si <span data-applicant-name></span> no puede pagar</p>
         <strong data-limit></strong>
       </div>
       <dl class="facts">
@@ -314,8 +321,9 @@
         <div><dt>Valor de cada cuota</dt><dd data-field="installment"></dd></div>
         <div><dt>Intereses de ejemplo</dt><dd data-field="interest"></dd></div>
         <div><dt>Tasa ilustrativa prorrateada por semana</dt><dd data-field="weeklyRate"></dd></div>
-        <div><dt>Total que pagaría Diana</dt><dd data-field="total"></dd></div>
+        <div><dt>Total que pagaría <span data-applicant-name></span></dt><dd data-field="total"></dd></div>
       </dl>
+      <p>La tasa es un ejemplo de esta simulación. No constituye una oferta de crédito.</p>
       <div class="actions" id="voting-actions">
         <button type="button" data-decision="approve">Votar a favor</button>
         <button type="button" data-decision="reject" class="secondary">Votar en contra</button>
@@ -323,8 +331,8 @@
         <button type="button" data-decision="resume">Retomar votación</button>
       </div>
       <div class="actions" id="guided-after-vote" hidden>
-        <p>El desembolso simulado quedó registrado. Vuelve a Diana para simular la siguiente cuota.</p>
-        <button type="button" id="guided-return">Volver al perfil de Diana</button>
+        <p>El desembolso simulado quedó registrado. Vuelve a <span data-applicant-name></span> para simular la siguiente cuota.</p>
+        <button type="button" id="guided-return">Volver al perfil de <span data-applicant-name></span></button>
       </div>
       <div class="decision-history" id="sheet-history" hidden>
         <h2>Rondas anteriores de esta versión</h2>

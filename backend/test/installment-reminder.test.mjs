@@ -3,9 +3,9 @@ import { test } from 'node:test';
 import {
   createDemoState, getInbox, getInstallmentReminder, recordInstallmentIntention, recordVote,
   respondToInvitation, submitApplication, submitRevision, supporters,
-} from '../src/demo-state.mjs';
-import { registerDisbursement } from '../src/finance-state.mjs';
-import { getInstallmentCase } from '../src/installment-state.mjs';
+} from '../domain/demo-state.mjs';
+import { registerDisbursement } from '../domain/finance-state.mjs';
+import { getInstallmentCase } from '../domain/installment-state.mjs';
 
 const voters = ['ana', 'camilo', 'elena', 'jose', 'luz'];
 

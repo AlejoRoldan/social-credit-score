@@ -5,7 +5,7 @@ import {
   getApplicationStatus, getDisbursementAuthorization, getSupportStatus, inviteSupporter, loanDetails, migrateLegacyRequest, pauseForMeeting,
   reasons, recordVote, respondToInvitation, resumeAfterMeeting, submitApplication,
   submitRevision, terms, updateDraft,
-} from '../src/demo-state.mjs';
+} from '../domain/demo-state.mjs';
 
 test('cuatro confirmados y una invitación pendiente no bastan para enviar', () => {
   const state = createDemoState();
@@ -119,6 +119,21 @@ function sentToSix(weeks = 5) {
   assert.ok(submitApplication(state));
   return state;
 }
+
+test('modificar fichas de la bandeja no altera la versión vigente ni el historial', () => {
+  const state = sentToSix();
+  assert.ok(submitRevision(state, applicant.id, 1, { ...state.draft, weeks: 8 }, electorate));
+  const before = structuredClone(state);
+  const notices = getInbox(state, 'ana');
+  assert.equal(notices.length, 2);
+  for (const notice of notices) {
+    notice.application.applicant.name = 'Nombre editado';
+    notice.application.amount = 0;
+    notice.rounds[0].approvals = 6;
+  }
+  assert.deepEqual(state, before);
+  assert.deepEqual(getInbox(state, 'ana'), getInbox(before, 'ana'));
+});
 
 test('cinco de seis mantienen la versión en revisión y el último voto favorable completa la unanimidad', () => {
   const state = sentToSix();

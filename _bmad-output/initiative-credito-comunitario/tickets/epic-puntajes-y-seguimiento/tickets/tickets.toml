@@ -31,7 +31,7 @@ title = "Recibir un recordatorio privado de cuota"
 description = "Como solicitante, quiero ver mi vencimiento y un siguiente paso en privado para poder anticipar un problema de pago."
 verify = "Abrir un vencimiento ficticio como solicitante, ver el recordatorio y elegir un siguiente paso. Cambiar al perfil respaldante y comprobar que solo accede a la información necesaria sobre su propio compromiso."
 covers = ["R2"]
-after = [1]
+after = [1, "2.1"]
 hitl = false
 risk = "medium"
 # Continúa sobre las vistas por rol de la épica. La demo representa el recordatorio dentro de la app.

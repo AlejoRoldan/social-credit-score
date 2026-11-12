@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applicant, createDemoState } from '../src/demo-state.mjs';
-import { getFinanceDashboard } from '../src/finance-state.mjs';
-import { getInstallmentCase, installmentSupporters, voteOnInstallmentReserve } from '../src/installment-state.mjs';
+import { applicant, createDemoState } from '../domain/demo-state.mjs';
+import { getFinanceDashboard } from '../domain/finance-state.mjs';
+import { getInstallmentCase, installmentSupporters, voteOnInstallmentReserve } from '../domain/installment-state.mjs';
 import {
   confirmProjectTransfer, getProjectCase, projectElectorate, submitProjectProposal, validateProjectProposal, voteOnProject,
-} from '../src/project-state.mjs';
+} from '../domain/project-state.mjs';
 
 const purpose = 'Materiales para un taller';
 const read = (state) => getProjectCase(state, applicant.id);
