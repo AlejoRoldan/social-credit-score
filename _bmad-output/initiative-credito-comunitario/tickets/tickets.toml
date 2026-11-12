@@ -1,0 +1,22 @@
+# Orden propuesto para revisar y refinar las épicas de la demo.
+
+[[epic]]
+id = 1
+slug = "epic-solicitud-y-votacion"
+title = "Solicitud y decisión del círculo"
+description = "La persona solicita crédito y el grupo toma una decisión verificable sobre una propuesta concreta."
+covers = ["R1", "R2", "R3", "R4", "R5", "R6"]
+
+[[epic]]
+id = 2
+slug = "epic-bolsa-y-proyectos"
+title = "Bolsa, impagos y proyectos colectivos"
+description = "El círculo consulta sus recursos, explica cómo se cubre un faltante y puede proponer un proyecto con un monto verificable."
+covers = ["R7", "R8", "R9", "R10"]
+
+[[epic]]
+id = 3
+slug = "epic-puntajes-y-seguimiento"
+title = "Puntajes y seguimiento privado"
+description = "La persona y su círculo entienden los dos puntajes y pueden consultar la información que les corresponde durante el seguimiento."
+covers = ["R11", "R12"]
