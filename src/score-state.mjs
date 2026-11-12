@@ -18,6 +18,29 @@ const circleExample = Object.freeze({
   }),
 });
 
+export const scoreComparisonExamples = Object.freeze([
+  Object.freeze({
+    label: 'Caso A',
+    value: 82,
+    history: '10 semanas con el estado de 5 cuotas quincenales',
+    compliance: '5 de 5 cuotas pagadas a tiempo',
+    requestedCop: 300_000,
+    paidCop: 250_000,
+    committedCop: 250_000,
+    membership: '14 meses',
+  }),
+  Object.freeze({
+    label: 'Caso B',
+    value: 58,
+    history: '10 semanas con el estado de 5 cuotas quincenales',
+    compliance: '4 de 5 cuotas pagadas a tiempo. Quedó sin pagar la cuota de la semana 10.',
+    requestedCop: 300_000,
+    paidCop: 200_000,
+    committedCop: 250_000,
+    membership: '8 meses',
+  }),
+]);
+
 export function getOwnScore(profileId) {
   return profileId === 'ana' ? anaScore : null;
 }

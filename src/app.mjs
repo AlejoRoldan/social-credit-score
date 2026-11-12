@@ -13,7 +13,7 @@ import {
 import {
   canViewProject, confirmProjectTransfer, getProjectCase, submitProjectProposal, validateProjectProposal, voteOnProject,
 } from './project-state.mjs';
-import { getCircleScore, getOwnScore } from './score-state.mjs';
+import { getCircleScore, getOwnScore, scoreComparisonExamples } from './score-state.mjs';
 
 const storageKey = 'credito-comunitario-hu-1-1';
 const presentationKey = 'credito-comunitario-hu-2-2';
@@ -262,6 +262,26 @@ function renderOwnScore(score) {
   byId('own-score-membership').textContent = score?.history.membership ?? '';
 }
 
+function renderScoreComparison() {
+  byId('score-comparison-cases').replaceChildren(...scoreComparisonExamples.map((example) => {
+    const card = document.createElement('article');
+    card.className = 'score-example score-content';
+    const title = document.createElement('h2');
+    title.textContent = `${example.label} · ${example.value}/100`;
+    const facts = document.createElement('dl');
+    facts.className = 'facts';
+    facts.append(...factRows([
+      ['Historial disponible', example.history],
+      ['Cumplimiento observado', example.compliance],
+      ['Monto solicitado frente a los pagos registrados', `${money(example.requestedCop)} solicitados y ${money(example.paidCop)} pagados en ese periodo`],
+      ['Monto comprometido', `${money(example.committedCop)} en cuotas durante ese periodo`],
+      ['Tiempo de vínculo', example.membership],
+    ]));
+    card.append(title, facts);
+    return card;
+  }));
+}
+
 function renderFinance(dashboard, score) {
   const { fund, budget } = dashboard ?? {};
   const figures = {
@@ -282,16 +302,20 @@ function renderFinance(dashboard, score) {
   byId('open-project').hidden = !canViewProject(profile.value);
 }
 
-function renderFacts(id, entries) {
-  byId(id).replaceChildren(...entries.map(([label, amount]) => {
+function factRows(entries) {
+  return entries.map(([label, text]) => {
     const row = document.createElement('div');
     const term = document.createElement('dt');
     const value = document.createElement('dd');
     term.textContent = label;
-    value.textContent = money(amount);
+    value.textContent = text;
     row.append(term, value);
     return row;
-  }));
+  });
+}
+
+function renderFacts(id, entries) {
+  byId(id).replaceChildren(...factRows(entries.map(([label, amount]) => [label, money(amount)])));
 }
 
 function readProjectDraft() {
@@ -829,4 +853,5 @@ byId('send-form').addEventListener('submit', (event) => {
 });
 
 if (!guided && !['installment', 'project'].includes(presentation.normalNavigation?.view)) delete presentation.normalNavigation;
+renderScoreComparison();
 openJourney(guided, false, false);
