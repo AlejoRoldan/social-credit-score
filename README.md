@@ -55,6 +55,23 @@ La regla ficticia de la demo divide los intereses totales de la ficha entre el p
 5. Repite a 320 px de ancho en Chromium. Abre la bolsa y vuelve a «Mi solicitud» con Tab y Enter. Comprueba que el foco es visible y que los controles miden al menos 44 × 44 px.
 6. Para comprobar el bloqueo por costo, repite en una sesión nueva con un plazo de 4 semanas y cinco votos a favor. Diana ve «Bloqueado por costo» y el presupuesto de créditos sigue en $1.000.000 COP. `node --test` cubre también el bloqueo por falta de autorización, versión obsoleta y saldo insuficiente, así como el registro único al restaurar una ficha ya autorizada.
 
+## Probar la HU 2.2
+
+### Recorrido guiado con reserva
+
+1. Selecciona «Iniciar demo». La ficha de Luz se abre con cuatro votos favorables. Emite el último voto para registrar el desembolso y usa «Volver al perfil de Diana».
+2. Como Diana, elige «Simular la siguiente cuota». La cuota vencida de $100.000 COP es un ejemplo independiente. Diana ya pagó $40.000 COP y quedan $60.000 COP pendientes mientras el grupo vota sobre la reserva.
+3. Cambia a Ana, Camilo, Elena, José y Luz para votar a favor de usar $25.000 COP. La vista de Diana ofrece un acceso al siguiente perfil. Recarga después del cuarto voto y comprueba que se conservan el perfil, el ejemplo y los cuatro votos, con saldo de $120.000 COP y reserva de $40.000 COP. Después del quinto voto, el saldo baja a $95.000 COP y la reserva a $15.000 COP. El disponible sigue en $60.000 COP.
+4. En cada perfil de respaldo, comprueba que aparece solo su aporte de $7.000 COP. Simula un pago como Ana, Camilo, Elena y José, y un aporte fallido como Luz. Vuelve a Diana y comprueba los $28.000 COP realizados por el grupo, los $7.000 COP pendientes y las cinco asignaciones originales. Recarga para comprobar que persisten el fallo y los saldos.
+5. Para probar otro desenlace, reinicia y vota en contra en la cuota. El caso queda pendiente de resolución con $60.000 COP por cubrir y la bolsa conserva sus saldos iniciales.
+
+### Variante con bolsa vacía
+
+1. Desde «Cuota pendiente», elige «Bolsa vacía». En la guía aparece después de completar los aportes del caso con reserva o de un voto en contra. Los cinco aportes de $10.000 COP se asignan de inmediato.
+2. Simula los cinco pagos y vuelve a Diana. Quedan $10.000 COP pendientes después del pago propio de $40.000 COP y los $50.000 COP del grupo. Al alternar las variantes, cada una conserva sus votos, aportes y saldos.
+
+Los dos ejemplos también están disponibles desde «Cuota pendiente» en el recorrido normal. «Ir al recorrido normal» conserva el avance de la demo guiada, y «Reiniciar demo» repone la ficha de Luz con cuatro votos y reinicia los dos ejemplos guiados. Los cambios de cada recorrido se guardan en la sesión de la pestaña. Para verificar permisos, elige a Mateo o Rosa desde cualquiera de los dos ejemplos. En Chromium a 320 px, usa Tab, Enter y tacto emulado para recorrer los controles y comprobar el foco visible.
+
 ## Documentación
 
 - [PRD v0.5](_bmad-output/initiative-credito-comunitario/prd-inclusion-financiera/prd-inclusion-financiera.md) con el alcance, las decisiones confirmadas y las preguntas abiertas.

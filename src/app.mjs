@@ -7,8 +7,12 @@ import {
 import {
   canViewFinance, getDisbursementStatus, getFinanceDashboard, registerDisbursement, restoreFinance,
 } from './finance-state.mjs';
+import {
+  getInstallmentCase, installmentSupporters, simulateInstallmentContribution, voteOnInstallmentReserve,
+} from './installment-state.mjs';
 
 const storageKey = 'credito-comunitario-hu-1-1';
+const presentationKey = 'credito-comunitario-hu-2-2';
 const currency = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
 const percent = new Intl.NumberFormat('es-CO', { style: 'percent', maximumFractionDigits: 2 });
 const percentagePoints = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 });
@@ -36,26 +40,87 @@ const responseForm = byId('response-form');
 const navigation = byId('navigation');
 const sections = document.querySelectorAll('main section');
 const applicantViews = ['needs', 'circle', 'review', 'success'];
-const state = loadState();
-if (restoreFinance(state)) saveState();
+const guidedVoter = installmentSupporters.at(-1);
+const normalState = loadSession(storageKey, createDemoState());
+const presentation = loadSession(presentationKey, {});
+let guided = Boolean(presentation.active && presentation.guided);
+let state = guided ? presentation.guided : normalState;
 let applicantView = 'needs';
 let editingVersion = null;
 let selectedVersion = null;
+let installmentVariant = 'reserve';
+let currentView;
 
-function loadState() {
+function loadSession(key, fallback) {
   try {
-    return JSON.parse(sessionStorage.getItem(storageKey)) ?? createDemoState();
+    return JSON.parse(sessionStorage.getItem(key)) ?? fallback;
   } catch {
-    return createDemoState();
+    return fallback;
+  }
+}
+
+function saveSession(key, value) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // The demo still works in memory when storage is unavailable.
   }
 }
 
 function saveState() {
-  try {
-    sessionStorage.setItem(storageKey, JSON.stringify(state));
-  } catch {
-    // The demo still works in memory when storage is unavailable.
+  if (guided) saveSession(presentationKey, presentation);
+  else saveSession(storageKey, normalState);
+}
+
+function saveNavigation() {
+  const slot = guided ? 'guidedNavigation' : 'normalNavigation';
+  presentation[slot] = { view: currentView, profileId: profile.value, selectedVersion, applicantView, installmentVariant };
+  presentation.active = guided;
+  saveSession(presentationKey, presentation);
+}
+
+function createGuidedLoan() {
+  const loan = createDemoState();
+  respondToInvitation(loan, guidedVoter, 'confirmed');
+  submitApplication(loan);
+  for (const id of installmentSupporters.slice(0, -1)) recordVote(loan, id, 1, 1, 'approve');
+  return loan;
+}
+
+function openJourney(useGuide, reset = false, moveFocus = true) {
+  if (useGuide && !guided && editingVersion) {
+    const form = new FormData(draftForm);
+    presentation.normalRevision = { version: editingVersion, details: readDetails(form), electorate: form.getAll('electorate') };
   }
+  guided = useGuide;
+  if (guided && (reset || !presentation.guided)) {
+    presentation.guided = createGuidedLoan();
+    presentation.guidedNavigation = { view: 'sheet', profileId: guidedVoter, selectedVersion: 1 };
+  }
+  state = guided ? presentation.guided : normalState;
+  if (restoreFinance(state)) saveState();
+  const saved = guided ? presentation.guidedNavigation : presentation.normalNavigation;
+  profile.value = saved?.profileId ?? applicant.id;
+  if (!profile.value) profile.value = applicant.id;
+  applicantView = saved?.applicantView ?? 'needs';
+  selectedVersion = saved?.selectedVersion ?? null;
+  installmentVariant = saved?.installmentVariant === 'empty' ? 'empty' : 'reserve';
+  editingVersion = null;
+  draftForm.elements.amount.value = state.draft.amount;
+  draftForm.elements.weeks.value = state.draft.weeks;
+  draftForm.elements.reason.value = state.draft.reason;
+  resetDraftForm();
+  if (!guided && presentation.normalRevision) {
+    const { version, details, electorate } = presentation.normalRevision;
+    const current = getApplicationStatus(state, applicant.id);
+    if (current?.version === version && !getRecordedDisbursement(state)) renderRevisionForm(version, details, electorate);
+    delete presentation.normalRevision;
+  }
+  byId('start-demo').hidden = guided;
+  byId('start-demo').textContent = presentation.guided ? 'Continuar demo' : 'Iniciar demo';
+  byId('reset-demo').hidden = !presentation.guided;
+  byId('exit-demo').hidden = !guided;
+  show(saved?.view ?? applicantView, moveFocus);
 }
 
 function announce(message) {
@@ -167,6 +232,8 @@ function renderApplicantStatus() {
   amount.hidden = !disbursement.movement;
   amount.textContent = disbursement.movement ? money(disbursement.movement.principalCop) : '';
   byId('edit-revision').hidden = Boolean(disbursement.movement);
+  byId('simulate-installment').hidden = !guided || !disbursement.movement;
+  byId('application-profile-hint').hidden = guided && Boolean(disbursement.movement);
 
   const displayedRate = percent.format(weeklyRate);
   const displayedLimit = percent.format(limit);
@@ -193,6 +260,107 @@ function renderFinance({ fund, budget }) {
     'budget-staff': budget.staffCop,
   };
   for (const [id, amount] of Object.entries(figures)) byId(id).textContent = money(amount);
+}
+
+function renderFacts(id, entries) {
+  byId(id).replaceChildren(...entries.map(([label, amount]) => {
+    const row = document.createElement('div');
+    const term = document.createElement('dt');
+    const value = document.createElement('dd');
+    term.textContent = label;
+    value.textContent = money(amount);
+    row.append(term, value);
+    return row;
+  }));
+}
+
+function renderInstallmentApplicant(example) {
+  const { installmentCop, ownPaymentCop, reservePaidCop, paidBySupportersCop, pendingCop, contributions,
+    fundBefore, fundAfter } = example;
+  renderFacts('installment-breakdown', [
+    ['Valor de la cuota vencida', installmentCop], ['Pago propio de Diana', ownPaymentCop],
+    ['Pago realizado con la reserva', reservePaidCop], ['Aportes realizados', paidBySupportersCop],
+    ['Total pendiente', pendingCop],
+  ]);
+  byId('installment-contributions').hidden = contributions.length === 0;
+  byId('installment-contributions').replaceChildren(...contributions.map((contribution) => {
+    const { id, assignedCop, paidCop, status } = contribution;
+    const item = document.createElement('li');
+    const name = document.createElement('strong');
+    const detail = document.createElement('span');
+    name.textContent = supporters.find((person) => person.id === id).name;
+    const result = { paid: 'Pagado', pending: 'Pendiente', failed: 'Fallido · sigue pendiente' }[status];
+    detail.textContent = `${result} · Asignado ${money(assignedCop)} · Realizado ${money(paidCop)}`;
+    item.append(name, detail);
+    return item;
+  }));
+  renderFacts('installment-balances', [
+    ['Saldo antes', fundBefore.balanceCop], ['Saldo después', fundAfter.balanceCop],
+    ['Reserva antes', fundBefore.reserveCop], ['Reserva después', fundAfter.reserveCop],
+    ['Disponible antes', fundBefore.availableCop], ['Disponible después', fundAfter.availableCop],
+  ]);
+}
+
+function renderInstallment() {
+  const reserve = getInstallmentCase(state, 'reserve', applicant.id);
+  const variantsAvailable = !guided || reserve.voteStatus === 'rejected' ||
+    (reserve.active && reserve.contributions.every(({ status }) => status !== 'pending'));
+  byId('installment-variants').hidden = !variantsAvailable;
+  if (!variantsAvailable) installmentVariant = 'reserve';
+  const example = getInstallmentCase(state, installmentVariant, profile.value);
+  byId('installment-denied').hidden = Boolean(example);
+  byId('installment-content').hidden = !example;
+  byId('installment-profile').hidden = Boolean(example);
+  const isApplicant = profile.value === applicant.id;
+  if (!isApplicant) {
+    for (const id of ['installment-breakdown', 'installment-contributions', 'installment-balances']) byId(id).replaceChildren();
+  }
+  if (!example) {
+    byId('installment-own').replaceChildren();
+    return;
+  }
+
+  for (const button of document.querySelectorAll('[data-variant]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.variant === installmentVariant));
+  }
+  const { active, approvals, voteStatus, reserveCop, ownVote, contribution, contributions, nextVoter } = example;
+  const reserveAmount = money(reserveCop);
+  byId('installment-status').textContent = {
+    waiting: `${approvals} de ${installmentSupporters.length} votos a favor. Se necesita unanimidad para usar ${reserveAmount} de la reserva y activar los aportes.`,
+    rejected: 'Hubo un voto en contra. La cuota queda pendiente de resolución y los aportes siguen bloqueados.',
+    approved: `Se registró una salida de ${reserveAmount} de la reserva. Los aportes ya están asignados.`,
+    unneeded: 'La bolsa está vacía. Los aportes se asignaron directamente.',
+  }[voteStatus];
+
+  byId('installment-applicant').hidden = !isApplicant;
+  if (isApplicant) renderInstallmentApplicant(example);
+  byId('installment-vote').hidden = !ownVote;
+  byId('installment-vote').textContent = ownVote ? ownDecision({ decision: ownVote }) : '';
+  byId('reserve-actions').hidden = isApplicant || voteStatus !== 'waiting' || Boolean(ownVote);
+  byId('contribution-actions').hidden = contribution?.status !== 'pending';
+  byId('installment-own').hidden = !contribution;
+  renderFacts('installment-own', contribution ? [
+    ['Tu aporte asignado', contribution.assignedCop], ['Tu aporte realizado', contribution.paidCop],
+  ] : []);
+
+  const nextContributor = contributions?.find(({ status }) => status === 'pending')?.id;
+  const nextId = isApplicant ? (active ? nextContributor : voteStatus === 'waiting' ? nextVoter : null) : applicant.id;
+  const nextName = supporters.find(({ id }) => id === nextId)?.name;
+  const next = byId('installment-next');
+  next.hidden = !nextId;
+  next.dataset.profile = nextId ?? '';
+  next.textContent = isApplicant ? `Cambiar al perfil de ${nextName}` : 'Volver al perfil de Diana';
+  const hint = byId('installment-next-hint');
+  hint.textContent = {
+    paid: 'Tu aporte quedó pagado.',
+    failed: 'Tu aporte falló y sigue pendiente.',
+    pending: guided && installmentVariant === 'reserve' && profile.value === guidedVoter
+      ? 'Para ver el faltante en el resumen de Diana, simula un aporte fallido en este perfil.' : '',
+  }[contribution?.status] ?? '';
+  if (isApplicant && active && !nextContributor && installmentVariant === 'reserve') {
+    hint.textContent = 'Puedes abrir el ejemplo con la bolsa vacía o reiniciar el recorrido guiado desde el encabezado.';
+  }
+  hint.hidden = !hint.textContent;
 }
 
 function renderInbox(notices) {
@@ -231,6 +399,7 @@ function renderSheet({ application, limit, version, isCurrent, rounds }) {
   const canPause = isCurrent && round.status === 'review';
   const canResume = isCurrent && round.status === 'meeting';
   const votingActions = byId('voting-actions');
+  byId('guided-after-vote').hidden = !guided || !getRecordedDisbursement(state);
   votingActions.hidden = !canPause && !canResume;
   votingActions.dataset.round = round.number;
   votingActions.querySelector('[data-decision="pause"]').hidden = !canPause;
@@ -251,9 +420,12 @@ function renderSheet({ application, limit, version, isCurrent, rounds }) {
 function show(requestedView, moveFocus = true) {
   const isApplicant = profile.value === applicant.id;
   const financeAllowed = canViewFinance(state, profile.value);
+  const installmentAllowed = !guided || Boolean(getRecordedDisbursement(state));
   let view = requestedView;
 
-  if (view === 'finance' && financeAllowed) {
+  if (view === 'installment' && installmentAllowed) {
+    renderInstallment();
+  } else if (view === 'finance' && financeAllowed) {
     renderFinance(getFinanceDashboard(state, profile.value));
   } else if (isApplicant) {
     if (view === 'application') view = applicantView;
@@ -284,15 +456,27 @@ function show(requestedView, moveFocus = true) {
   }
 
   navigation.hidden = false;
-  const currentView = view === 'finance' ? view : isApplicant ? 'application' : view === 'sheet' ? 'inbox' : view;
+  byId('guided-vote').hidden = installmentAllowed || (profile.value === guidedVoter && view === 'sheet');
+  const navView = ['finance', 'installment'].includes(view) ? view : isApplicant ? 'application' : view === 'sheet' ? 'inbox' : view;
   for (const button of navigation.querySelectorAll('[data-go]')) {
     const destination = button.dataset.go;
-    button.hidden = destination === 'finance' ? !financeAllowed : (destination === 'application') !== isApplicant;
-    if (destination === currentView) button.setAttribute('aria-current', 'page');
+    button.hidden = destination === 'finance' ? !financeAllowed : destination === 'installment' ? !installmentAllowed
+      : (destination === 'application') !== isApplicant;
+    if (destination === navView) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
   }
   for (const section of sections) section.hidden = section.id !== view;
+  currentView = view;
+  saveNavigation();
   if (moveFocus) byId(`${view}-title`).focus();
+}
+
+function resetDraftForm() {
+  byId('needs-step').textContent = 'Paso 1 de 3';
+  byId('needs-title').textContent = 'Cuéntanos qué necesitas';
+  byId('needs-description').textContent = 'Elige las opciones para la solicitud de Diana.';
+  byId('draft-submit').textContent = 'Continuar al grupo';
+  for (const id of ['revision-electorate', 'revision-preview', 'cancel-revision', 'revision-error']) byId(id).hidden = true;
 }
 
 function readDetails(form) {
@@ -332,16 +516,63 @@ for (const reason of reasons) {
   byId('reasons').append(label);
 }
 
-profile.addEventListener('change', () => {
+function showProfile(moveFocus) {
   selectedVersion = null;
-  const view = profile.value === applicant.id ? applicantView : (state.sent ? 'inbox' : 'support');
-  show(view, false);
+  const returnToVote = guided && profile.value === guidedVoter && !getRecordedDisbursement(state);
+  if (returnToVote) selectedVersion = getInbox(state, guidedVoter).find(({ isCurrent }) => isCurrent)?.version ?? null;
+  const view = returnToVote ? 'sheet' : currentView === 'installment' ? currentView
+    : profile.value === applicant.id ? applicantView : state.sent ? 'inbox' : 'support';
+  show(view, moveFocus);
   const name = profile.selectedOptions[0].textContent;
-  const title = document.querySelector('main section:not([hidden]) h1').textContent;
+  const title = byId(`${currentView}-title`).textContent;
   announce(`Perfil de prueba: ${name}. ${title}.`);
-});
+}
+
+function switchProfile(id) {
+  profile.value = id;
+  showProfile(true);
+}
+
+profile.addEventListener('change', () => showProfile(false));
 
 byId('choose-invited').addEventListener('click', () => profile.focus());
+byId('installment-profile').addEventListener('click', () => profile.focus());
+byId('start-demo').addEventListener('click', () => openJourney(true));
+byId('reset-demo').addEventListener('click', () => openJourney(true, true));
+byId('exit-demo').addEventListener('click', () => openJourney(false));
+byId('guided-vote').addEventListener('click', () => switchProfile(guidedVoter));
+byId('guided-return').addEventListener('click', () => switchProfile(applicant.id));
+byId('simulate-installment').addEventListener('click', () => {
+  installmentVariant = 'reserve';
+  show('installment');
+});
+
+for (const button of document.querySelectorAll('[data-variant]')) {
+  button.addEventListener('click', () => {
+    installmentVariant = button.dataset.variant;
+    show('installment', false);
+    announce(byId('installment-status').textContent);
+  });
+}
+
+byId('installment-next').addEventListener('click', (event) => {
+  const id = event.currentTarget.dataset.profile;
+  if (id) switchProfile(id);
+});
+
+byId('reserve-actions').addEventListener('click', (event) => {
+  if (!voteOnInstallmentReserve(state, installmentVariant, profile.value, event.target.dataset.reserveVote)) return;
+  saveState();
+  show('installment');
+  announce(byId('installment-status').textContent);
+});
+
+byId('contribution-actions').addEventListener('click', (event) => {
+  if (!simulateInstallmentContribution(state, installmentVariant, profile.value, event.target.dataset.contribution)) return;
+  saveState();
+  show('installment');
+  announce(byId('installment-next-hint').textContent);
+});
 
 for (const button of document.querySelectorAll('[data-go]')) {
   button.addEventListener('click', () => show(button.dataset.go));
@@ -374,12 +605,8 @@ draftForm.addEventListener('submit', (event) => {
   announce(`${byId('applicant-version').textContent}. ${byId('applicant-status').textContent}.`);
 });
 
-byId('edit-revision').addEventListener('click', () => {
-  const current = getApplicationStatus(state, profile.value);
-  if (!current || getRecordedDisbursement(state)) return;
-
-  editingVersion = current.version;
-  const { amount, reason, weeks } = current.application;
+function renderRevisionForm(version, { amount, reason, weeks }, electorate) {
+  editingVersion = version;
   draftForm.elements.amount.value = amount;
   draftForm.elements.reason.value = reason;
   draftForm.elements.weeks.value = weeks;
@@ -391,18 +618,25 @@ byId('edit-revision').addEventListener('click', () => {
     input.type = 'checkbox';
     input.name = 'electorate';
     input.value = id;
-    input.checked = current.electorate.includes(id);
+    input.checked = electorate.includes(id);
     label.append(input, name);
     return label;
   }));
   byId('needs-step').textContent = 'Solicitud de prueba';
-  byId('needs-title').textContent = `Prepara la versión ${current.version + 1}`;
+  byId('needs-title').textContent = `Prepara la versión ${version + 1}`;
   byId('needs-description').textContent = 'Puedes cambiar las condiciones y quiénes votan. La nueva ficha empieza sin votos.';
   byId('draft-submit').textContent = 'Enviar nueva versión';
   byId('revision-electorate').hidden = false;
   renderCostPreview();
   byId('cancel-revision').hidden = false;
   byId('revision-error').hidden = true;
+}
+
+byId('edit-revision').addEventListener('click', () => {
+  const current = getApplicationStatus(state, profile.value);
+  if (!current || getRecordedDisbursement(state)) return;
+
+  renderRevisionForm(current.version, current.application, current.electorate);
   show('needs');
 });
 
@@ -457,5 +691,5 @@ byId('send-form').addEventListener('submit', (event) => {
   }
 });
 
-profile.value = applicant.id;
-show(applicantView, false);
+if (!guided && presentation.normalNavigation?.view !== 'installment') delete presentation.normalNavigation;
+openJourney(guided, false, false);
