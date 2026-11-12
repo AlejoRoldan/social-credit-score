@@ -92,6 +92,7 @@ Los puntajes son ejemplos precargados. Las decisiones de crédito, impago y giro
 
 ## Documentación
 
+- [Traspaso del prototipo](docs/traspaso-prototipo.md) con decisiones, planes por historia, pruebas y orden de revisión de los PRs.
 - [PRD v0.5](_bmad-output/initiative-credito-comunitario/prd-inclusion-financiera/prd-inclusion-financiera.md) con el alcance, las decisiones confirmadas y las preguntas abiertas.
 - [Spec de iniciativa](_bmad-output/initiative-credito-comunitario/initiative-credito-comunitario.md) con requisitos trazables al PRD.
 - [Registro de épicas](_bmad-output/initiative-credito-comunitario/tickets/tickets.toml) con la primera división propuesta.
@@ -113,4 +114,4 @@ La primera historia lleva una solicitud de ejemplo hasta la ficha que recibe el 
 
 ## Pull requests
 
-Abrir los PRs de este proyecto en [AlejoRoldan/social-credit-score](https://github.com/AlejoRoldan/social-credit-score/pulls), desde una rama de trabajo y con destino a `main`. En cada PR, indicar qué requisitos aborda y cómo se verificaron. Si cambia una decisión de producto, actualizar el PRD y el spec correspondiente.
+Abrir los PRs de este proyecto en [AlejoRoldan/social-credit-score](https://github.com/AlejoRoldan/social-credit-score/pulls) desde una rama de trabajo. Usar `main` como base cuando las dependencias estén integradas. Si una historia depende de un PR abierto, usar la rama de ese PR como base y explicar la dependencia. En cada PR, indicar qué requisitos aborda y cómo se verificaron. Si cambia una decisión de producto, actualizar el PRD y el spec correspondiente.
