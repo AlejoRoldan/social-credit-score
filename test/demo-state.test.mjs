@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-  amounts, applicant, contributionLimit, countConfirmed, createDemoState, getInbox,
-  getApplicationStatus, getSupportStatus, inviteSupporter, loanDetails, pauseForMeeting,
+  amounts, applicant, checkCost, contributionLimit, countConfirmed, createDemoState, getInbox,
+  getApplicationStatus, getDisbursementAuthorization, getSupportStatus, inviteSupporter, loanDetails, migrateLegacyRequest, pauseForMeeting,
   reasons, recordVote, respondToInvitation, resumeAfterMeeting, submitApplication,
   submitRevision, terms, updateDraft,
 } from '../src/demo-state.mjs';
@@ -109,8 +109,9 @@ test('la revisión y la ficha usan las condiciones corregidas de la solicitud fi
 
 const electorate = ['ana', 'camilo', 'elena', 'jose', 'luz', 'mateo'];
 
-function sentToSix() {
+function sentToSix(weeks = 5) {
   const state = createDemoState();
+  assert.ok(updateDraft(state, { ...state.draft, weeks }));
   assert.ok(respondToInvitation(state, 'luz', 'confirmed'));
   assert.ok(inviteSupporter(state, 'mateo'));
   assert.ok(respondToInvitation(state, 'mateo', 'confirmed'));
@@ -125,6 +126,7 @@ test('cinco de seis mantienen la versión en revisión y el último voto favorab
   assert.deepEqual(getApplicationStatus(state, applicant.id).round, {
     number: 1, status: 'review', electorateSize: 6, approvals: 5, rejections: 0,
   });
+  assert.equal(getDisbursementAuthorization(state), null);
 
   assert.equal(recordVote(state, 'ana', 1, 1, 'reject'), false);
   assert.ok(recordVote(state, 'mateo', 1, 1, 'approve'));
@@ -142,6 +144,7 @@ test('un voto en contra mantiene la revisión hasta que responda todo el grupo',
   assert.deepEqual(getApplicationStatus(state, applicant.id).round, {
     number: 1, status: 'rejected', electorateSize: 6, approvals: 5, rejections: 1,
   });
+  assert.equal(getDisbursementAuthorization(state), null);
   assert.equal(pauseForMeeting(state, 'ana', 1, 1), false);
 });
 
@@ -151,10 +154,12 @@ test('la pausa se conserva al recargar y retomar abre una ronda vacía en la mis
   assert.ok(pauseForMeeting(state, 'camilo', 1, 1));
   const restored = JSON.parse(JSON.stringify(state));
   assert.equal(getApplicationStatus(restored, applicant.id).round.status, 'meeting');
+  assert.equal(getDisbursementAuthorization(restored), null);
   assert.equal(recordVote(restored, 'elena', 1, 1, 'approve'), false);
   assert.equal(pauseForMeeting(restored, 'ana', 1, 1), false);
 
   assert.ok(resumeAfterMeeting(restored, 'elena', 1, 1));
+  assert.equal(getDisbursementAuthorization(restored), null);
   const [notice] = getInbox(restored, 'ana');
   assert.equal(notice.version, 1);
   assert.deepEqual(notice.application, state.sent.application);
@@ -243,11 +248,16 @@ test('cada cambio individual de condiciones o electores crea otra versión', () 
 
 test('una sesión HU 1.1 conserva su ficha y destinatarios como versión 1 sin votos', () => {
   const state = sentToSix();
-  const { application, recipients } = state.sent;
+  const { recipients } = state.sent;
+  const application = { ...state.sent.application, installment: 65_000, interest: 25_000, total: 325_000 };
+  delete state.requestId;
   const restored = JSON.parse(JSON.stringify({ ...state, sent: { application, recipients } }));
+  assert.ok(migrateLegacyRequest(restored));
   assert.deepEqual(getApplicationStatus(restored, applicant.id).round, {
     number: 1, status: 'review', electorateSize: 6, approvals: 0, rejections: 0,
   });
+  assert.equal(getApplicationStatus(restored, applicant.id).cost.weeklyRate, 25_000 / (300_000 * 5));
+  assert.equal(getDisbursementAuthorization(restored), null);
   for (const voter of electorate) {
     const [notice] = getInbox(restored, voter);
     assert.equal(notice.version, 1);
@@ -257,4 +267,99 @@ test('una sesión HU 1.1 conserva su ficha y destinatarios como versión 1 sin v
   assert.deepEqual(getInbox(restored, 'rosa'), []);
   assert.ok(recordVote(restored, 'ana', 1, 1, 'approve'));
   assert.equal(getApplicationStatus(restored, applicant.id).round.approvals, 1);
+  for (const voter of electorate.slice(1)) assert.ok(recordVote(restored, voter, 1, 1, 'approve'));
+  const authorization = getDisbursementAuthorization(restored);
+  assert.ok(authorization?.id);
+  const reopened = JSON.parse(JSON.stringify(restored));
+  assert.deepEqual(getDisbursementAuthorization(reopened), authorization);
+  assert.deepEqual(getInbox(reopened, 'ana')[0].application, application);
+});
+
+test('cada solicitud restaurada recibe un identificador propio una sola vez', () => {
+  const state = sentToSix();
+  for (const voter of electorate) assert.ok(recordVote(state, voter, 1, 1, 'approve'));
+  assert.ok(getDisbursementAuthorization(state)?.id);
+  delete state.requestId;
+  const legacy = JSON.stringify(state);
+  assert.equal(getDisbursementAuthorization(state), null);
+  assert.equal(JSON.stringify(state), legacy);
+
+  const first = JSON.parse(legacy);
+  const second = JSON.parse(legacy);
+  assert.ok(migrateLegacyRequest(first));
+  assert.ok(migrateLegacyRequest(second));
+  assert.notEqual(getDisbursementAuthorization(first).id, getDisbursementAuthorization(second).id);
+  assert.deepEqual(first.sent, state.sent);
+  assert.deepEqual(second.sent, state.sent);
+
+  const recopied = JSON.parse(JSON.stringify(first));
+  assert.equal(migrateLegacyRequest(recopied), false);
+  assert.deepEqual(getDisbursementAuthorization(recopied), getDisbursementAuthorization(first));
+});
+
+test('un peso de interés por encima del límite impide autorizar una ficha guardada', () => {
+  const state = sentToSix();
+  delete state.requestId;
+  state.sent.application.interest = 30_001;
+  assert.ok(migrateLegacyRequest(state));
+  for (const voter of electorate) assert.ok(recordVote(state, voter, 1, 1, 'approve'));
+
+  const { cost } = getApplicationStatus(state, applicant.id);
+  assert.ok(cost.weeklyRate > cost.limit);
+  assert.ok((cost.weeklyRate - cost.limit) * 100 < 0.01);
+  assert.equal(getDisbursementAuthorization(state), null);
+});
+
+test('la unanimidad habilita el desembolso solo si la tasa semanal cumple el límite ficticio', () => {
+  assert.equal(getDisbursementAuthorization(createDemoState()), null);
+  for (const [weeks, weeklyRate, withinLimit] of [[8, 0.0125, true], [5, 0.02, true], [4, 0.025, false]]) {
+    const state = sentToSix(weeks);
+    for (const voter of electorate) assert.ok(recordVote(state, voter, 1, 1, 'approve'));
+
+    const status = getApplicationStatus(state, applicant.id);
+    assert.equal(status.round.status, 'approved');
+    assert.deepEqual(status.cost, { weeklyRate, limit: 0.02, withinLimit });
+
+    const authorization = getDisbursementAuthorization(state);
+    assert.deepEqual(status.authorization, authorization);
+    if (!withinLimit) {
+      assert.equal(authorization, null);
+      continue;
+    }
+
+    assert.ok(authorization.id);
+    assert.equal(authorization.version, 1);
+    assert.equal(authorization.principalCop, 300_000);
+    assert.deepEqual(getDisbursementAuthorization(state), authorization);
+    assert.ok(submitApplication(state));
+    assert.deepEqual(getDisbursementAuthorization(JSON.parse(JSON.stringify(state))), authorization);
+  }
+});
+
+test('una revisión retira la autorización anterior y requiere su propia ronda y comprobación', () => {
+  const state = sentToSix(8);
+  for (const voter of electorate) assert.ok(recordVote(state, voter, 1, 1, 'approve'));
+  const original = getDisbursementAuthorization(state);
+  assert.ok(original);
+
+  const currentElectorate = electorate.slice(0, -1);
+  assert.ok(submitRevision(state, applicant.id, 1, state.draft, currentElectorate));
+  assert.equal(getDisbursementAuthorization(state), null);
+  const [historical] = getInbox(JSON.parse(JSON.stringify(state)), 'mateo');
+  assert.equal(historical.isCurrent, false);
+  assert.equal(historical.rounds[0].status, 'approved');
+  assert.deepEqual(historical.application, { applicant, ...loanDetails(state.draft) });
+  assert.equal(checkCost(historical.application).weeklyRate, 0.0125);
+
+  for (const voter of currentElectorate) assert.ok(recordVote(state, voter, 2, 1, 'approve'));
+  const authorization = getDisbursementAuthorization(state);
+  assert.ok(authorization);
+  assert.notEqual(authorization.id, original.id);
+  assert.equal(authorization.version, 2);
+  assert.equal(authorization.principalCop, original.principalCop);
+
+  assert.ok(submitRevision(state, applicant.id, 2, { ...state.draft, weeks: 4 }, currentElectorate));
+  for (const voter of currentElectorate) assert.ok(recordVote(state, voter, 3, 1, 'approve'));
+  assert.equal(getApplicationStatus(state, applicant.id).cost.withinLimit, false);
+  assert.equal(getDisbursementAuthorization(state), null);
 });

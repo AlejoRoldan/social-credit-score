@@ -25,6 +25,7 @@ export const reasons = Object.freeze([
 
 export const minimumSupporters = 5;
 export const contributionLimit = 10_000;
+const weeklyCostLimit = 0.02;
 
 export function createDemoState() {
   return {
@@ -49,6 +50,11 @@ export function loanDetails({ amount, reason, weeks }) {
   const interest = amount / 10;
   const total = amount + interest;
   return { amount, reason, weeks, frequency: 'Cada semana', installment: total / weeks, interest, total };
+}
+
+export function checkCost({ amount, weeks, interest }) {
+  const weeklyRate = interest / (amount * weeks);
+  return { weeklyRate, limit: weeklyCostLimit, withinLimit: weeklyRate <= weeklyCostLimit };
 }
 
 export function getSupportStatus(state, profileId) {
@@ -83,12 +89,25 @@ export function countConfirmed(state) {
   return confirmedSupporters(state).length;
 }
 
+function newRequestId() {
+  const random = globalThis.crypto?.getRandomValues?.(new Uint32Array(4));
+  return random?.join('-') ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+export function migrateLegacyRequest(state) {
+  if (!state.sent || state.requestId) return false;
+
+  state.requestId = newRequestId();
+  return true;
+}
+
 export function submitApplication(state) {
   if (state.sent) return true;
 
   const confirmed = confirmedSupporters(state);
   if (confirmed.length < minimumSupporters) return false;
 
+  state.requestId = newRequestId();
   state.sent = makeVersion(1, state.draft, confirmed.map(({ id }) => id));
   return true;
 }
@@ -130,12 +149,24 @@ export function getApplicationStatus(state, profileId) {
   if (!current || profileId !== applicant.id) return null;
 
   const electorate = Object.keys(current.recipients);
+  const round = describeRound(current.rounds.at(-1), electorate.length, current.rounds.length);
+  const cost = checkCost(current.application);
+  const { requestId } = state;
+  const authorization = requestId && round.status === 'approved' && cost.withinLimit
+    ? { id: `${requestId}:${current.version}`, version: current.version, principalCop: current.application.amount }
+    : null;
   return {
     version: current.version,
     application: current.application,
     electorate,
-    round: describeRound(current.rounds.at(-1), electorate.length, current.rounds.length),
+    round,
+    cost,
+    authorization,
   };
+}
+
+export function getDisbursementAuthorization(state) {
+  return getApplicationStatus(state, applicant.id)?.authorization ?? null;
 }
 
 export function getInbox(state, profileId) {

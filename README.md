@@ -2,7 +2,7 @@
 
 Proyecto en fase de diseño para explorar préstamos de bajo monto respaldados por círculos de confianza. La primera prueba será una demo navegable con datos ficticios para personas con ingresos variables y sin cuenta bancaria en Medellín. Se plantea como alternativa al pagadiario o gota a gota.
 
-El alcance previsto de la demo abarca la solicitud y su votación, el uso de la bolsa del círculo ante una cuota impaga y una propuesta de proyecto colectivo. La HU 1.1 permite preparar una solicitud de ejemplo y entregar su ficha a las personas que confirmaron su respaldo. La HU 1.2 permite que el grupo vote o pause la decisión para una reunión.
+El alcance previsto de la demo abarca la solicitud y su votación, el uso de la bolsa del círculo ante una cuota impaga y una propuesta de proyecto colectivo. La HU 1.1 permite preparar una solicitud de ejemplo y entregar su ficha a las personas que confirmaron su respaldo. La HU 1.2 permite que el grupo vote o pause la decisión para una reunión. La HU 1.3 comprueba el costo y habilita el desembolso simulado cuando también hay unanimidad.
 
 ## Probar la HU 1.1
 
@@ -29,12 +29,22 @@ node --test
 1. Antes de enviar, acepta como Luz. Como Diana, invita a Mateo y acepta desde su perfil. Invita también a Rosa y deja su invitación pendiente. Envía como Diana. Ana, Camilo, Elena, José, Luz y Mateo reciben la versión 1. Rosa sigue con la bandeja vacía y Diana ve el estado en su propia vista.
 2. Abre la ficha en la bandeja de Ana y vota a favor. Como Camilo, elige «Dejar pendiente para reunión». Vuelve a abrir la versión 1 desde la bandeja y comprueba que muestra «Pendiente de reunión» y ofrece «Retomar votación». Diana también ve el estado pendiente.
 3. Retoma como Elena. Comprueba que sigue siendo la versión 1 y la ronda 2 comienza con cero votos. Ana puede consultar el voto que registró en la ronda 1.
-4. Para probar la unanimidad, vota a favor desde cinco perfiles y comprueba en la vista de Diana que sigue «En revisión». El sexto voto favorable cambia el estado a «Aprobada por el grupo». La verificación del costo y la autorización del desembolso corresponden a la HU 1.3.
+4. Para probar la unanimidad, vota a favor desde cinco perfiles y comprueba en la vista de Diana que sigue «En revisión». El sexto voto favorable cambia el estado a «Aprobada por el grupo».
 5. Como Diana, elige «Preparar una nueva versión», cambia las condiciones y desmarca a Mateo. Envía la versión 2 con cinco electores. Ana ve las dos fichas con sus propias condiciones y conteos. Mateo conserva acceso a la versión 1 como historial. La versión 2 empieza con cero votos.
 6. En la versión 2, registra un voto en contra. Diana ve «En revisión» mientras falten respuestas y «Rechazada» cuando los cinco hayan votado.
 7. En Chromium, ajusta el ancho a 320 px. Usa Tab y Enter o Espacio para abrir la ficha y votar, y repite con tacto emulado en otra ronda. Comprueba que el foco es visible, que el estado se lee como texto y que los controles principales miden al menos 44 × 44 px.
 
 La demo conserva el borrador, el grupo, las fichas y sus rondas en la sesión de la pestaña, incluso al recargar. Una ficha guardada por la HU 1.1 aparece como versión 1 «En revisión», con el padrón original y cero votos. Abre la dirección en una ventana privada nueva para empezar desde el principio.
+
+## Probar la HU 1.3 con el mismo monto a 4 y 8 semanas
+
+1. En una sesión nueva, elige $300.000 COP a 4 semanas y continúa al grupo. Acepta el respaldo como Luz. Vuelve a Diana, abre «Revisa y envía» y comprueba la tasa semanal ilustrativa de 2,5 %, los $30.000 COP de intereses, la cuota de $82.500 COP y el total de $330.000 COP.
+2. Envía y vota a favor desde las fichas de Ana, Camilo, Elena, José y Luz. Como Diana, comprueba que el grupo aprobó la solicitud y que el desembolso simulado quedó bloqueado por costo. La tasa supera por 0,5 puntos porcentuales el límite ficticio de 2 % semanal.
+3. Elige «Preparar una nueva versión», conserva el monto y cambia a 8 semanas. Comprueba que la edición muestra una tasa de 1,25 % y una cuota de $41.250 COP, con los mismos intereses y total. Envía y verifica que la versión 2 queda pendiente de aprobación con cero votos. En la bandeja de Ana, la versión 1 conserva sus condiciones y votos.
+4. Vota a favor desde los cinco perfiles en la versión 2 y vuelve a Diana. El desembolso simulado figura como «Habilitado». Recarga y verifica que se mantiene. Para probar la igualdad con el límite, crea una versión a 5 semanas y consigue unanimidad. Una tasa de 2 % también habilita el desembolso simulado.
+5. En Chromium a 320 px, usa el teclado para recorrer las dos fichas. Comprueba que se ven el foco, la tasa, la cuota, los intereses y el total.
+
+La regla ficticia de la demo divide los intereses totales de la ficha entre el principal y el plazo en semanas. `getDisbursementAuthorization(state)` devuelve `{ id, version, principalCop }` cuando la versión vigente cumple el límite y su última ronda es unánime, y `null` en los demás casos.
 
 ## Documentación
 
