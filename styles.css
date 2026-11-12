@@ -117,6 +117,12 @@ button:disabled { background: #e8eeea; color: #425c53; border-color: #789087; cu
 .total strong { display: block; margin-top: .25rem; font-size: 1.625rem; }
 .callout button { margin-top: .75rem; }
 
+.decision-status strong { display: block; margin-block: .25rem; font-size: 1.25rem; }
+.notice-list, .round-list { display: grid; gap: .75rem; list-style: none; padding: 0; }
+.decision-history h2 { margin: 0 0 .5rem; font-size: 1.125rem; }
+.round-list li { border-inline-start: 3px solid var(--line); padding-inline-start: .75rem; }
+#revision-error { color: #8b3700; }
+
 .member-list { list-style: none; padding: 0; }
 .member-list li, .facts div { padding-block: .5rem; border-bottom: 1px solid var(--line); }
 .member-list li { display: flex; flex-wrap: wrap; gap: .25rem 1rem; justify-content: space-between; }

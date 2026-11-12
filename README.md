@@ -2,7 +2,7 @@
 
 Proyecto en fase de diseño para explorar préstamos de bajo monto respaldados por círculos de confianza. La primera prueba será una demo navegable con datos ficticios para personas con ingresos variables y sin cuenta bancaria en Medellín. Se plantea como alternativa al pagadiario o gota a gota.
 
-El alcance previsto de la demo abarca la solicitud y su votación, el uso de la bolsa del círculo ante una cuota impaga y una propuesta de proyecto colectivo. El primer recorrido disponible, HU 1.1, permite preparar una solicitud de ejemplo y entregar su ficha a las personas que confirmaron su respaldo.
+El alcance previsto de la demo abarca la solicitud y su votación, el uso de la bolsa del círculo ante una cuota impaga y una propuesta de proyecto colectivo. La HU 1.1 permite preparar una solicitud de ejemplo y entregar su ficha a las personas que confirmaron su respaldo. La HU 1.2 permite que el grupo vote o pause la decisión para una reunión.
 
 ## Probar la HU 1.1
 
@@ -24,7 +24,17 @@ node --test
 4. Envía la solicitud. Cambia a Ana y abre el único aviso de su bandeja. Comprueba el resumen de Diana, la ausencia de historial, las condiciones enviadas y el tope propio. Cambia a un perfil sin confirmar y comprueba su estado y la bandeja vacía. Para probar el caso pendiente, deja una invitación adicional sin responder antes de enviar.
 5. Repite el recorrido a 320 px de ancho, con teclado o tacto, y al 200 % de tamaño de texto. Comprueba el foco visible, los estados escritos y que el contenido cabe en el ancho disponible.
 
-La demo conserva el borrador, el grupo y la ficha enviada en la sesión de la pestaña, incluso al recargar. Abre la dirección en una ventana privada nueva para empezar desde el principio.
+## Probar la HU 1.2 con seis perfiles
+
+1. Antes de enviar, acepta como Luz. Como Diana, invita a Mateo y acepta desde su perfil. Invita también a Rosa y deja su invitación pendiente. Envía como Diana. Ana, Camilo, Elena, José, Luz y Mateo reciben la versión 1. Rosa sigue con la bandeja vacía y Diana ve el estado en su propia vista.
+2. Abre la ficha en la bandeja de Ana y vota a favor. Como Camilo, elige «Dejar pendiente para reunión». Vuelve a abrir la versión 1 desde la bandeja y comprueba que muestra «Pendiente de reunión» y ofrece «Retomar votación». Diana también ve el estado pendiente.
+3. Retoma como Elena. Comprueba que sigue siendo la versión 1 y la ronda 2 comienza con cero votos. Ana puede consultar el voto que registró en la ronda 1.
+4. Para probar la unanimidad, vota a favor desde cinco perfiles y comprueba en la vista de Diana que sigue «En revisión». El sexto voto favorable cambia el estado a «Aprobada por el grupo». La verificación del costo y la autorización del desembolso corresponden a la HU 1.3.
+5. Como Diana, elige «Preparar una nueva versión», cambia las condiciones y desmarca a Mateo. Envía la versión 2 con cinco electores. Ana ve las dos fichas con sus propias condiciones y conteos. Mateo conserva acceso a la versión 1 como historial. La versión 2 empieza con cero votos.
+6. En la versión 2, registra un voto en contra. Diana ve «En revisión» mientras falten respuestas y «Rechazada» cuando los cinco hayan votado.
+7. En Chromium, ajusta el ancho a 320 px. Usa Tab y Enter o Espacio para abrir la ficha y votar, y repite con tacto emulado en otra ronda. Comprueba que el foco es visible, que el estado se lee como texto y que los controles principales miden al menos 44 × 44 px.
+
+La demo conserva el borrador, el grupo, las fichas y sus rondas en la sesión de la pestaña, incluso al recargar. Una ficha guardada por la HU 1.1 aparece como versión 1 «En revisión», con el padrón original y cero votos. Abre la dirección en una ventana privada nueva para empezar desde el principio.
 
 ## Documentación
 
