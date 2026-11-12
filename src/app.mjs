@@ -13,6 +13,7 @@ import {
 import {
   canViewProject, confirmProjectTransfer, getProjectCase, submitProjectProposal, validateProjectProposal, voteOnProject,
 } from './project-state.mjs';
+import { getCircleScore, getOwnScore } from './score-state.mjs';
 
 const storageKey = 'credito-comunitario-hu-1-1';
 const presentationKey = 'credito-comunitario-hu-2-2';
@@ -252,18 +253,32 @@ function renderApplicantStatus() {
     : `${comparison} La tasa supera el límite por ${percentagePoints.format(excess)} puntos porcentuales.`;
 }
 
-function renderFinance({ fund, budget }) {
+function renderOwnScore(score) {
+  byId('own-score-value').textContent = score ? `${score.value} de 100` : '';
+  byId('own-score-result').hidden = !score;
+  byId('own-score-insufficient').hidden = Boolean(score);
+  byId('own-score-compliance').textContent = score?.history.compliance ?? '';
+  byId('own-score-commitments').textContent = score?.history.commitments ?? '';
+  byId('own-score-membership').textContent = score?.history.membership ?? '';
+}
+
+function renderFinance(dashboard, score) {
+  const { fund, budget } = dashboard ?? {};
   const figures = {
-    'fund-interest': fund.interestCollectedCop,
-    'fund-balance': fund.balanceCop,
-    'fund-reserve': fund.reserveCop,
-    'fund-commitments': fund.commitmentsCop,
-    'fund-available': fund.availableCop,
-    'budget-credit': budget.creditCop,
-    'budget-platform': budget.platformCop,
-    'budget-staff': budget.staffCop,
+    'fund-interest': score?.interestCollectedCop,
+    'fund-balance': fund?.balanceCop,
+    'fund-reserve': fund?.reserveCop,
+    'fund-commitments': fund?.commitmentsCop,
+    'fund-available': score?.availableCop,
+    'budget-credit': budget?.creditCop,
+    'budget-platform': budget?.platformCop,
+    'budget-staff': budget?.staffCop,
   };
-  for (const [id, amount] of Object.entries(figures)) byId(id).textContent = money(amount);
+  for (const [id, amount] of Object.entries(figures)) byId(id).textContent = amount == null ? '' : money(amount);
+  byId('circle-score-value').textContent = score ? `${score.value} de 100` : '';
+  byId('circle-score-compliance').textContent = score?.signals.compliance ?? '';
+  byId('circle-score-commitments').textContent = score?.signals.commitments ?? '';
+  byId('circle-score-membership').textContent = score?.signals.membership ?? '';
   byId('open-project').hidden = !canViewProject(profile.value);
 }
 
@@ -508,12 +523,17 @@ function show(requestedView, moveFocus = true) {
   const installmentAllowed = !guided || Boolean(getRecordedDisbursement(state));
   let view = requestedView;
 
-  if (view === 'project') {
+  if (view !== 'score') renderOwnScore(null);
+  if (!financeAllowed) renderFinance(null, null);
+
+  if (view === 'score') {
+    renderOwnScore(getOwnScore(profile.value));
+  } else if (view === 'project') {
     renderProject();
   } else if (view === 'installment' && installmentAllowed) {
     renderInstallment();
   } else if (view === 'finance' && financeAllowed) {
-    renderFinance(getFinanceDashboard(state, profile.value));
+    renderFinance(getFinanceDashboard(state, profile.value), getCircleScore(state, profile.value));
   } else if (isApplicant) {
     if (view === 'application') view = applicantView;
     const canContinueRevision = view === 'needs' && editingVersion && !getRecordedDisbursement(state);
@@ -545,13 +565,13 @@ function show(requestedView, moveFocus = true) {
   navigation.hidden = false;
   byId('guided-vote').hidden = installmentAllowed || (profile.value === guidedVoter && view === 'sheet');
   const navView = view === 'project' && financeAllowed ? 'finance'
-    : ['finance', 'installment', 'project'].includes(view) ? view
+    : ['finance', 'installment', 'project', 'score'].includes(view) ? view
       : isApplicant ? 'application' : view === 'sheet' ? 'inbox' : view;
   for (const button of navigation.querySelectorAll('[data-go]')) {
     const destination = button.dataset.go;
     button.hidden = destination === 'finance' ? !financeAllowed : destination === 'installment' ? !installmentAllowed
       : destination === 'project' ? financeAllowed || !canViewProject(profile.value)
-        : (destination === 'application') !== isApplicant;
+        : destination !== 'score' && (destination === 'application') !== isApplicant;
     if (destination === navView) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
   }
@@ -610,7 +630,7 @@ function showProfile(moveFocus, destination) {
   selectedVersion = null;
   const returnToVote = guided && profile.value === guidedVoter && !getRecordedDisbursement(state);
   if (returnToVote) selectedVersion = getInbox(state, guidedVoter).find(({ isCurrent }) => isCurrent)?.version ?? null;
-  const view = destination ?? (currentView === 'project' ? currentView : returnToVote ? 'sheet'
+  const view = destination ?? (['project', 'score', 'finance'].includes(currentView) ? currentView : returnToVote ? 'sheet'
     : currentView === 'installment' ? currentView : profile.value === applicant.id ? applicantView : state.sent ? 'inbox' : 'support');
   show(view, moveFocus);
   const name = profile.selectedOptions[0].textContent;
