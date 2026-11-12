@@ -6,7 +6,7 @@ covers: ["R7", "R8", "R9", "R10"]
 sources: ["_bmad-output/initiative-credito-comunitario/initiative-credito-comunitario.md"]
 companions: []
 refined: false
-risk: medium
+risk: high
 ---
 
 # Bolsa, impagos y proyectos colectivos
@@ -36,6 +36,8 @@ Un desembolso de crédito reduce el presupuesto de créditos y mantiene el saldo
 - El escenario de impago muestra quién aporta y qué queda pendiente, incluso con un aporte fallido.
 - En el caso de proyecto, el disponible baja de $60.000 a $10.000 con un giro simulado de $50.000 registrado una sola vez.
 
+- Comprobar el recorrido completo de esta épica en la demo móvil entregada para pruebas.
+
 ## Boundaries
 
 Los casos usan movimientos ficticios y presupuestos separados. La custodia, el prestamista y la distribución real del aporte corresponden a un futuro piloto.
@@ -48,3 +50,4 @@ Los casos usan movimientos ficticios y presupuestos separados. La custodia, el p
 ## Notes
 
 - Open question: La aprobación unánime de las salidas de la bolsa y el uso de la reserva antes de los aportes individuales son supuestos de la demo.
+- Decision: 2026-11-10. Proponer como primer recorrido «Consultar la bolsa y registrar un desembolso de crédito». Las historias y sus comprobaciones están en el [registro de esta épica](tickets/tickets.toml).

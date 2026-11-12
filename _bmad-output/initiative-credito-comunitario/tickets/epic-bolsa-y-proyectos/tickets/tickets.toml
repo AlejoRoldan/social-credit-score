@@ -1,0 +1,37 @@
+# Historias propuestas para revisión. El orden de las tablas es el orden de trabajo.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Consultar la bolsa y registrar un desembolso de crédito"
+description = "Como integrante del círculo, quiero distinguir los intereses y recursos del grupo del presupuesto de créditos para saber de dónde sale cada monto. Esta historia consume la autorización de la HU 1.3 y entrega el tablero que consulta la HU 3.1."
+verify = "Abrir el tablero de la bolsa y comprobar intereses cobrados, saldo, reserva, compromisos y disponible, sin descontar una partida dos veces. Registrar un desembolso autorizado por la HU 1.3 y comprobar que baja únicamente el capital para créditos. La bolsa y los presupuestos de plataforma y personal conservan sus saldos. Repetir el registro de la misma autorización y comprobar que se contabiliza un solo desembolso."
+covers = ["R1","R4"]
+after = ["1.3"]
+hitl = false
+risk = "high"
+# Comprobar que un desembolso bloqueado no modifica saldos. Esta historia proporciona el tablero a las HUs 2.2, 2.3 y 3.1.
+
+[[entry]]
+id = 2
+type = "story"
+title = "Repartir el faltante de una cuota"
+description = "Como solicitante o respaldante, quiero ver cómo se cubre una cuota impaga para entender cuánto corresponde aportar y cuánto queda pendiente. Esta historia comprueba la autorización unánime de una salida de la bolsa, que reutiliza la HU 2.3."
+verify = "Con una cuota de $100.000 y un pago propio de $40.000, comprobar que un voto pendiente conserva el saldo de la bolsa y muestra $60.000 por cubrir antes de aplicar aportes. Autorizar el uso de $25.000 y comprobar cinco aportes de $7.000. Simular un aporte fallido y verificar $7.000 pendientes, sin reasignar el faltante. Con bolsa vacía y cinco topes de $10.000 quedan $10.000 pendientes. Cada respaldante puede ver su monto asignado."
+covers = ["R2"]
+after = [1]
+hitl = false
+risk = "high"
+# Comprobar que el tablero diferencia un aporte autorizado de uno realizado. El orden de uso de la reserva y la unanimidad son supuestos explícitos de la demo.
+
+[[entry]]
+id = 3
+type = "story"
+title = "Proponer y girar fondos para un proyecto colectivo"
+description = "Como integrante del círculo, quiero proponer un proyecto por un monto que el grupo pueda cubrir para que todos lo revisen antes de usar la bolsa."
+verify = "En un escenario independiente del impago, con $120.000 de saldo, $40.000 de reserva y $20.000 comprometidos, comprobar $60.000 disponibles. Aprobar un proyecto ficticio de $50.000 y verificar que el giro deja $10.000 disponibles. Repetir la confirmación y comprobar un solo movimiento. Probar un monto superior al disponible y comprobar que la app indica cuánto excede el saldo libre. Verificar que ese caso y una votación sin unanimidad conservan el saldo."
+covers = ["R1","R3"]
+after = [2]
+hitl = false
+risk = "high"
+# Probar que el giro para el proyecto deja intacta la reserva de cuotas. Usa el saldo y las reglas de movimiento comprobadas por las historias anteriores.

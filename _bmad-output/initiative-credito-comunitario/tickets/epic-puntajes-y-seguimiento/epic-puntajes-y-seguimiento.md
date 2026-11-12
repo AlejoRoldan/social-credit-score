@@ -34,6 +34,8 @@ Dos casos ficticios muestran sus factores y permiten explicar por qué difieren 
 - Un perfil sin historial se distingue de uno con incumplimientos.
 - La persona solicitante ve el recordatorio y los respaldantes solo reciben la información necesaria sobre su compromiso.
 
+- Comprobar el recorrido completo de esta épica en la demo móvil entregada para pruebas.
+
 ## Boundaries
 
 Los puntajes se presentan como resultados de prueba. Los pesos y su efecto en decisiones reales quedan pendientes.
@@ -46,3 +48,4 @@ Los puntajes se presentan como resultados de prueba. Los pesos y su efecto en de
 ## Notes
 
 - Open question: La incidencia de la finalidad del préstamo en el puntaje, el importe o la prioridad se mantiene abierta.
+- Decision: 2026-11-10. Proponer como primer recorrido «Consultar el puntaje individual y el del círculo». Las historias y sus comprobaciones están en el [registro de esta épica](tickets/tickets.toml).

@@ -13,6 +13,7 @@ slug = "epic-bolsa-y-proyectos"
 title = "Bolsa, impagos y proyectos colectivos"
 description = "El círculo consulta sus recursos, explica cómo se cubre un faltante y puede proponer un proyecto con un monto verificable."
 covers = ["R7", "R8", "R9", "R10"]
+after = [{ epic = 1, needs = "La autorización de desembolso sobre la versión vigente y dentro del límite de prueba" }]
 
 [[epic]]
 id = 3
@@ -20,3 +21,4 @@ slug = "epic-puntajes-y-seguimiento"
 title = "Puntajes y seguimiento privado"
 description = "La persona y su círculo entienden los dos puntajes y pueden consultar la información que les corresponde durante el seguimiento."
 covers = ["R11", "R12"]
+after = [{ epic = 2, needs = "El tablero de bolsa con intereses cobrados y saldo disponible" }]

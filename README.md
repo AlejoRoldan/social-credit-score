@@ -15,7 +15,15 @@ La demo recorre la solicitud y su votación, el uso de la bolsa del círculo ant
 
 ## Trabajo con BMAD
 
-El directorio `_bmad-output` sigue la estructura del árbol de iniciativas de BMAD v7. El PRD conserva las decisiones de producto y el spec de iniciativa las traduce a requisitos `R<n>`. Cada épica cita los requisitos que cubre. El siguiente paso es revisar esta división, refinar cada épica y convertirla en historias con criterios de verificación. [Guía del árbol de tickets de BMAD](https://docs.bmad-method.org/plan/set-up-the-ticket-tree/).
+El directorio `_bmad-output` sigue la estructura del árbol de iniciativas de BMAD v7. El PRD conserva las decisiones de producto y el spec de iniciativa las traduce a requisitos `R<n>`. Cada épica cita los requisitos que cubre. El primer desglose propone nueve historias con una comprobación por historia. Cada registro indica qué requisito cubre y qué trabajo necesita antes. El orden y las historias quedan para revisión. [Guía del árbol de tickets de BMAD](https://docs.bmad-method.org/plan/set-up-the-ticket-tree/).
+
+## Historias de usuario
+
+- [Solicitud y votación](_bmad-output/initiative-credito-comunitario/tickets/epic-solicitud-y-votacion/tickets/tickets.toml).
+- [Bolsa, impagos y proyectos](_bmad-output/initiative-credito-comunitario/tickets/epic-bolsa-y-proyectos/tickets/tickets.toml).
+- [Puntajes y seguimiento](_bmad-output/initiative-credito-comunitario/tickets/epic-puntajes-y-seguimiento/tickets/tickets.toml).
+
+La primera historia lleva una solicitud de ejemplo hasta la ficha que recibe el círculo. La votación y la comprobación del costo preceden al desembolso. Una vez disponible el tablero de la bolsa, los puntajes pueden avanzar en paralelo con los escenarios de impago y proyecto.
 
 ## Pull requests
 
