@@ -3,8 +3,8 @@ import { test } from 'node:test';
 import {
   applicant, createDemoState, getDisbursementAuthorization, inviteSupporter, recordVote,
   respondToInvitation, submitApplication, submitRevision, updateDraft,
-} from '../src/demo-state.mjs';
-import { getDisbursementStatus, getFinanceDashboard, registerDisbursement, restoreFinance } from '../src/finance-state.mjs';
+} from '../domain/demo-state.mjs';
+import { getDisbursementStatus, getFinanceDashboard, registerDisbursement, restoreFinance } from '../domain/finance-state.mjs';
 
 const voters = ['ana', 'camilo', 'elena', 'jose', 'luz'];
 

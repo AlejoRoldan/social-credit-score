@@ -44,6 +44,8 @@ El tablero del círculo muestra **intereses cobrados acumulados**, saldo actual 
 
 **Supuesto de simulación.** Ante una cuota impaga, se solicita autorización para aplicar primero la reserva disponible. Los respaldantes cubren el remanente según la regla de reparto y los topes aceptados. El ejemplo usa reparto igual y mantiene visible cualquier diferencia pendiente si falla un aporte. Si falta la aprobación de la bolsa, el importe permanece pendiente y la pantalla distingue ese estado de un giro realizado. La prioridad, el plazo para votar y la alternativa ante un bloqueo quedan abiertos. El seguimiento entre pares se prueba con un recordatorio privado y una conversación sobre el siguiente paso de pago.
 
+**Cierre de la votación en la demo.** El primer voto en contra cierra la votación sobre el uso de la reserva o sobre una propuesta de proyecto colectivo, porque esa ronda ya no puede alcanzar la unanimidad. La bolsa conserva su saldo. Si el rechazo afecta a la reserva, el importe de la cuota sigue pendiente. En la solicitud de crédito, la ronda sigue abierta hasta que todas las personas habilitadas voten para registrar el resultado completo del grupo. Las tres operaciones requieren unanimidad para aprobarse.
+
 ### Puntaje individual y puntaje del círculo
 
 | Indicador | Señales que se probarán | Qué puede ver la persona |

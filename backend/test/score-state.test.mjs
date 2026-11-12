@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   createDemoState, getInbox, loanDetails, reasons, respondToInvitation, submitApplication, updateDraft,
-} from '../src/demo-state.mjs';
-import { getFinanceDashboard } from '../src/finance-state.mjs';
-import { confirmProjectTransfer, projectElectorate, submitProjectProposal, voteOnProject } from '../src/project-state.mjs';
-import { getCircleScore, getOwnScore, scoreComparisonExamples } from '../src/score-state.mjs';
+} from '../domain/demo-state.mjs';
+import { getFinanceDashboard } from '../domain/finance-state.mjs';
+import { confirmProjectTransfer, projectElectorate, submitProjectProposal, voteOnProject } from '../domain/project-state.mjs';
+import { getCircleScore, getOwnScore, scoreComparisonExamples } from '../domain/score-state.mjs';
 
 test('solo Ana tiene un resultado individual precargado y consultar otros perfiles no devuelve su historial', () => {
   const ana = getOwnScore('ana');

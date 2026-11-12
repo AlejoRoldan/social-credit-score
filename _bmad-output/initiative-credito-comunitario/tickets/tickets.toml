@@ -21,4 +21,4 @@ slug = "epic-puntajes-y-seguimiento"
 title = "Puntajes y seguimiento privado"
 description = "La persona y su círculo entienden los dos puntajes y pueden consultar la información que les corresponde durante el seguimiento."
 covers = ["R11", "R12"]
-after = [{ epic = 2, needs = "El tablero de bolsa con intereses cobrados y saldo disponible" }]
+after = [{ epic = 2, needs = "La HU 2.1 entrega el tablero de bolsa para la HU 3.1 y registra el desembolso que activa la HU 3.3" }]

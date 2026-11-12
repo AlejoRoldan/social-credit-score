@@ -1,19 +1,20 @@
 import {
   amounts, applicant, checkCost, contributionLimit, countConfirmed, createDemoState, getApplicationStatus, getInbox,
-  getRecordedDisbursement, getSupportStatus, inviteSupporter, loanDetails, minimumSupporters, reasons,
-  pauseForMeeting, recordVote, respondToInvitation, resumeAfterMeeting, submitApplication,
+  getDisbursementAuthorization, getInstallmentReminder, getRecordedDisbursement, getSupportStatus, inviteSupporter,
+  isStoredDemoState, loanDetails, minimumSupporters, reasons,
+  pauseForMeeting, recordInstallmentIntention, recordVote, respondToInvitation, resumeAfterMeeting, submitApplication,
   submitRevision, supporters, terms, updateDraft,
-} from './demo-state.mjs';
+} from '../../backend/domain/demo-state.mjs';
 import {
   canViewFinance, getDisbursementStatus, getFinanceDashboard, registerDisbursement, restoreFinance,
-} from './finance-state.mjs';
+} from '../../backend/domain/finance-state.mjs';
 import {
   getInstallmentCase, installmentSupporters, simulateInstallmentContribution, voteOnInstallmentReserve,
-} from './installment-state.mjs';
+} from '../../backend/domain/installment-state.mjs';
 import {
   canViewProject, confirmProjectTransfer, getProjectCase, submitProjectProposal, validateProjectProposal, voteOnProject,
-} from './project-state.mjs';
-import { getCircleScore, getOwnScore, scoreComparisonExamples } from './score-state.mjs';
+} from '../../backend/domain/project-state.mjs';
+import { getCircleScore, getOwnScore, scoreComparisonExamples } from '../../backend/domain/score-state.mjs';
 
 const storageKey = 'credito-comunitario-hu-1-1';
 const presentationKey = 'credito-comunitario-hu-2-2';
@@ -21,6 +22,11 @@ const currency = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
 const percent = new Intl.NumberFormat('es-CO', { style: 'percent', maximumFractionDigits: 2 });
 const percentagePoints = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 });
 const money = (amount) => `$${currency.format(amount)} COP`;
+const reminderDate = new Intl.DateTimeFormat('es-CO', { dateStyle: 'long', timeZone: 'UTC' });
+const reminderNextSteps = {
+  'plan-to-pay': 'Aparta el importe antes del vencimiento.',
+  'need-to-talk': 'Anota lo que necesitas conversar sobre la cuota.',
+};
 const statusText = {
   confirmed: 'Confirmado',
   excluded: 'Fuera de la versión vigente',
@@ -43,11 +49,13 @@ const inviteForm = byId('invite-form');
 const invitee = byId('invitee');
 const responseForm = byId('response-form');
 const navigation = byId('navigation');
+const installmentReminder = byId('installment-reminder');
 const sections = document.querySelectorAll('main section');
 const applicantViews = ['needs', 'circle', 'review', 'success'];
 const guidedVoter = installmentSupporters.at(-1);
-const normalState = loadSession(storageKey, createDemoState());
-const presentation = loadSession(presentationKey, {});
+const normalState = loadSession(storageKey, createDemoState(), isStoredDemoState);
+const presentation = loadSession(presentationKey, {}, (value) => typeof value === 'object' && !Array.isArray(value));
+if (!isStoredDemoState(presentation.guided)) delete presentation.guided;
 let guided = Boolean(presentation.active && presentation.guided);
 let state = guided ? presentation.guided : normalState;
 let applicantView = 'needs';
@@ -56,9 +64,10 @@ let selectedVersion = null;
 let installmentVariant = 'reserve';
 let currentView;
 
-function loadSession(key, fallback) {
+function loadSession(key, fallback, isValid) {
   try {
-    return JSON.parse(sessionStorage.getItem(key)) ?? fallback;
+    const value = JSON.parse(sessionStorage.getItem(key));
+    return value !== null && isValid(value) ? value : fallback;
   } catch {
     return fallback;
   }
@@ -80,6 +89,14 @@ function saveState() {
 function saveNavigation() {
   const slot = guided ? 'guidedNavigation' : 'normalNavigation';
   presentation[slot] = { view: currentView, profileId: profile.value, selectedVersion, applicantView, installmentVariant };
+  if (!guided) {
+    if (editingVersion) {
+      const form = new FormData(draftForm);
+      presentation.normalRevision = { version: editingVersion, details: readDetails(form), electorate: form.getAll('electorate') };
+    } else {
+      delete presentation.normalRevision;
+    }
+  }
   presentation.active = guided;
   saveSession(presentationKey, presentation);
 }
@@ -93,10 +110,6 @@ function createGuidedLoan() {
 }
 
 function openJourney(useGuide, reset = false, moveFocus = true) {
-  if (useGuide && !guided && editingVersion) {
-    const form = new FormData(draftForm);
-    presentation.normalRevision = { version: editingVersion, details: readDetails(form), electorate: form.getAll('electorate') };
-  }
   guided = useGuide;
   if (guided && (reset || !presentation.guided)) {
     presentation.guided = createGuidedLoan();
@@ -118,8 +131,9 @@ function openJourney(useGuide, reset = false, moveFocus = true) {
   if (!guided && presentation.normalRevision) {
     const { version, details, electorate } = presentation.normalRevision;
     const current = getApplicationStatus(state, applicant.id);
-    if (current?.version === version && !getRecordedDisbursement(state)) renderRevisionForm(version, details, electorate);
-    delete presentation.normalRevision;
+    if (current && current.version === version && details && Array.isArray(electorate) && !getRecordedDisbursement(state)) {
+      renderRevisionForm(version, details, electorate);
+    }
   }
   byId('start-demo').hidden = guided;
   byId('start-demo').textContent = presentation.guided ? 'Continuar demo' : 'Iniciar demo';
@@ -133,6 +147,8 @@ function announce(message) {
 }
 
 function fillDetails(section, details) {
+  const { weeklyRate, limit, withinLimit } = checkCost(details);
+  const container = byId(section);
   const fields = {
     ...details,
     amount: money(details.amount),
@@ -140,11 +156,17 @@ function fillDetails(section, details) {
     installment: money(details.installment),
     interest: money(details.interest),
     total: money(details.total),
-    weeklyRate: percent.format(checkCost(details).weeklyRate),
+    weeklyRate: percent.format(weeklyRate),
   };
 
-  for (const field of byId(section).querySelectorAll('[data-field]')) {
+  for (const field of container.querySelectorAll('[data-field]')) {
     field.textContent = fields[field.dataset.field];
+  }
+
+  const warning = container.querySelector('[data-cost-warning]');
+  if (warning) {
+    warning.hidden = withinLimit;
+    warning.textContent = withinLimit ? '' : `La tasa supera el límite de ejemplo del ${percent.format(limit)} semanal. Aunque el grupo apruebe la solicitud, el desembolso simulado quedará bloqueado.`;
   }
 }
 
@@ -183,7 +205,7 @@ function renderSupport(status) {
     excluded: 'Puedes consultar en la bandeja las fichas que recibiste en versiones anteriores.',
     pending: 'Puedes decidir si aceptas ese compromiso.',
     declined: 'Decidiste no respaldar esta solicitud.',
-    uninvited: 'Diana aún no te ha invitado a respaldar esta solicitud.',
+    uninvited: `${applicant.name} aún no te ha invitado a respaldar esta solicitud.`,
   };
 
   for (const label of document.querySelectorAll('[data-support-status]')) {
@@ -207,6 +229,26 @@ function ownDecision({ decision }) {
   if (decision === 'approve') return 'Votaste a favor.';
   if (decision === 'reject') return 'Votaste en contra.';
   return 'Sin voto de tu perfil en esta ronda.';
+}
+
+function renderReminderIntention(intention) {
+  for (const button of installmentReminder.querySelectorAll('[data-intention]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.intention === intention));
+  }
+  installmentReminder.querySelector('[data-reminder-next-step]').textContent = reminderNextSteps[intention] ?? '';
+}
+
+function renderInstallmentReminder(reminder) {
+  installmentReminder.replaceChildren();
+  if (!reminder) return;
+
+  const content = byId('installment-reminder-template').content.cloneNode(true);
+  const time = content.querySelector('time');
+  time.dateTime = reminder.dueDate;
+  time.textContent = reminderDate.format(new Date(reminder.dueDate));
+  content.querySelector('[data-reminder-amount]').textContent = money(reminder.amountCop);
+  installmentReminder.append(content);
+  renderReminderIntention(reminder.intention);
 }
 
 function renderApplicantStatus() {
@@ -273,8 +315,9 @@ function renderScoreComparison() {
     facts.append(...factRows([
       ['Historial disponible', example.history],
       ['Cumplimiento observado', example.compliance],
-      ['Monto solicitado frente a los pagos registrados', `${money(example.requestedCop)} solicitados y ${money(example.paidCop)} pagados en ese periodo`],
-      ['Monto comprometido', `${money(example.committedCop)} en cuotas durante ese periodo`],
+      ['Monto solicitado para todo el préstamo', money(example.requestedCop)],
+      ['Cuotas con vencimiento en las 10 semanas observadas', money(example.committedCop)],
+      ['Pagos registrados en esas 10 semanas', money(example.paidCop)],
       ['Tiempo de vínculo', example.membership],
     ]));
     card.append(title, facts);
@@ -322,17 +365,22 @@ function readProjectDraft() {
   return [projectForm.elements.purpose.value, projectForm.elements.amount.valueAsNumber];
 }
 
-function renderProjectValidation(result) {
+function renderProjectValidation({ status, excessCop } = {}) {
   const error = byId('project-error');
   error.textContent = {
     'missing-purpose': 'Escribe la finalidad de la propuesta.',
     'invalid-amount': 'Ingresa un importe positivo en pesos enteros.',
-    'exceeds-available': result.excessCop ? `El importe excede el disponible en ${money(result.excessCop)}.` : '',
+    'exceeds-available': excessCop ? `El importe excede el disponible en ${money(excessCop)}.` : '',
     blocked: 'Este perfil no puede enviar una propuesta ahora.',
-  }[result.status] ?? '';
+  }[status] ?? '';
   error.hidden = !error.textContent;
-  projectForm.elements.purpose.setAttribute('aria-invalid', String(result.status === 'missing-purpose'));
-  projectForm.elements.amount.setAttribute('aria-invalid', String(['invalid-amount', 'exceeds-available'].includes(result.status)));
+  projectForm.elements.purpose.setAttribute('aria-invalid', String(status === 'missing-purpose'));
+  projectForm.elements.amount.setAttribute('aria-invalid', String(['invalid-amount', 'exceeds-available'].includes(status)));
+}
+
+function validateProjectDraft() {
+  const amount = projectForm.elements.amount;
+  renderProjectValidation(amount.value || amount.validity.badInput ? validateProjectProposal(state, ...readProjectDraft()) : undefined);
 }
 
 function renderProjectProposal(proposal) {
@@ -386,7 +434,7 @@ function renderProject() {
   confirm.dataset.proposalId = current?.id ?? '';
   confirm.textContent = canConfirm ? `Confirmar giro de ${money(current.amountCop)}` : '';
   projectForm.hidden = !canPropose;
-  if (canPropose) renderProjectValidation(validateProjectProposal(state, ...readProjectDraft()));
+  if (canPropose) validateProjectDraft();
 
   byId('project-history').hidden = history.length === 0;
   byId('project-history-list').replaceChildren(...history.map((proposal) => {
@@ -402,7 +450,7 @@ function renderInstallmentApplicant(example) {
   const { installmentCop, ownPaymentCop, reservePaidCop, paidBySupportersCop, pendingCop, contributions,
     fundBefore, fundAfter } = example;
   renderFacts('installment-breakdown', [
-    ['Valor de la cuota vencida', installmentCop], ['Pago propio de Diana', ownPaymentCop],
+    ['Valor de la cuota vencida', installmentCop], [`Pago propio de ${applicant.name}`, ownPaymentCop],
     ['Pago realizado con la reserva', reservePaidCop], ['Aportes realizados', paidBySupportersCop],
     ['Total pendiente', pendingCop],
   ]);
@@ -473,13 +521,13 @@ function renderInstallment() {
   const next = byId('installment-next');
   next.hidden = !nextId;
   next.dataset.profile = nextId ?? '';
-  next.textContent = isApplicant ? `Cambiar al perfil de ${nextName}` : 'Volver al perfil de Diana';
+  next.textContent = isApplicant ? `Cambiar al perfil de ${nextName}` : `Volver al perfil de ${applicant.name}`;
   const hint = byId('installment-next-hint');
   hint.textContent = {
     paid: 'Tu aporte quedó pagado.',
     failed: 'Tu aporte falló y sigue pendiente.',
     pending: guided && installmentVariant === 'reserve' && profile.value === guidedVoter
-      ? 'Para ver el faltante en el resumen de Diana, simula un aporte fallido en este perfil.' : '',
+      ? `Para ver el faltante en el resumen de ${applicant.name}, simula un aporte fallido en este perfil.` : '',
   }[contribution?.status] ?? '';
   if (isApplicant && active && !nextContributor && installmentVariant === 'reserve') {
     hint.textContent = 'Puedes abrir el ejemplo con la bolsa vacía o reiniciar el recorrido guiado desde el encabezado.';
@@ -497,6 +545,7 @@ function renderInbox(notices) {
     description.textContent = `${title}. Versión ${version}${isCurrent ? '' : ' (historial)'} · ${votingStatus[rounds.at(-1).status]}`;
     const open = document.createElement('button');
     open.type = 'button';
+    open.dataset.version = version;
     open.textContent = `Abrir ficha de la versión ${version}`;
     open.addEventListener('click', () => {
       selectedVersion = version;
@@ -511,7 +560,7 @@ function renderSheet({ application, limit, version, isCurrent, rounds }) {
   const round = rounds.at(-1);
   byId('applicant-name').textContent = application.applicant.name;
   byId('applicant-summary').textContent = application.applicant.summary;
-  byId('applicant-history').textContent = application.applicant.history ?? 'Diana aún no tiene historial de pagos en la app.';
+  byId('applicant-history').textContent = application.applicant.history ?? `${application.applicant.name} aún no tiene historial de pagos en la app.`;
   byId('sheet').querySelector('[data-limit]').textContent = money(limit);
   fillDetails('sheet', application);
 
@@ -586,6 +635,7 @@ function show(requestedView, moveFocus = true) {
     if (view === 'sheet') renderSheet(notice);
   }
 
+  renderInstallmentReminder(view === 'success' ? getInstallmentReminder(state, profile.value) : null);
   navigation.hidden = false;
   byId('guided-vote').hidden = installmentAllowed || (profile.value === guidedVoter && view === 'sheet');
   const navView = view === 'project' && financeAllowed ? 'finance'
@@ -608,7 +658,7 @@ function show(requestedView, moveFocus = true) {
 function resetDraftForm() {
   byId('needs-step').textContent = 'Paso 1 de 3';
   byId('needs-title').textContent = 'Cuéntanos qué necesitas';
-  byId('needs-description').textContent = 'Elige las opciones para la solicitud de Diana.';
+  byId('needs-description').textContent = `Elige las opciones para la solicitud de ${applicant.name}.`;
   byId('draft-submit').textContent = 'Continuar al grupo';
   for (const id of ['revision-electorate', 'revision-preview', 'cancel-revision', 'revision-error']) byId(id).hidden = true;
 }
@@ -669,10 +719,18 @@ function switchProfile(id, destination) {
 
 profile.addEventListener('change', () => showProfile(false));
 
+installmentReminder.addEventListener('click', (event) => {
+  const intention = event.target.dataset.intention;
+  if (!recordInstallmentIntention(state, profile.value, intention)) return;
+
+  saveState();
+  renderReminderIntention(intention);
+});
+
 byId('choose-invited').addEventListener('click', () => profile.focus());
 byId('installment-profile').addEventListener('click', () => profile.focus());
 byId('project-profile').addEventListener('click', () => profile.focus());
-projectForm.addEventListener('input', () => renderProjectValidation(validateProjectProposal(state, ...readProjectDraft())));
+projectForm.addEventListener('input', validateProjectDraft);
 projectForm.addEventListener('submit', (event) => {
   event.preventDefault();
   const result = submitProjectProposal(state, profile.value, ...readProjectDraft());
@@ -743,7 +801,8 @@ byId('edit-draft').addEventListener('click', renderCostPreview);
 
 draftForm.addEventListener('change', () => {
   byId('revision-error').hidden = true;
-  if (!editingVersion) saveDraft();
+  if (editingVersion) saveNavigation();
+  else saveDraft();
   if (!byId('revision-preview').hidden) renderCostPreview();
 });
 draftForm.addEventListener('submit', (event) => {
@@ -812,7 +871,10 @@ byId('voting-actions').addEventListener('click', (event) => {
       : recordVote(...selection, decision);
   if (!updated) return;
 
-  if (decision === 'approve') registerDisbursement(state);
+  if (decision === 'approve') {
+    const authorization = getDisbursementAuthorization(state);
+    if (authorization) registerDisbursement(state, authorization);
+  }
   saveState();
   show('sheet');
   announce(`${byId('sheet-status').textContent}. ${byId('sheet-votes').textContent}. ${byId('sheet-decision').textContent}`);
@@ -852,6 +914,8 @@ byId('send-form').addEventListener('submit', (event) => {
   }
 });
 
-if (!guided && !['installment', 'project'].includes(presentation.normalNavigation?.view)) delete presentation.normalNavigation;
+for (const label of document.querySelectorAll('[data-applicant-name]')) label.textContent = applicant.name;
 renderScoreComparison();
 openJourney(guided, false, false);
+byId('startup-message').hidden = true;
+profile.closest('.demo-controls').hidden = false;

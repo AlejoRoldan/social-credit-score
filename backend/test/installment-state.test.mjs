@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createDemoState } from '../src/demo-state.mjs';
-import { getFinanceDashboard } from '../src/finance-state.mjs';
+import { createDemoState } from '../domain/demo-state.mjs';
+import { getFinanceDashboard } from '../domain/finance-state.mjs';
 import {
   getInstallmentCase, installmentSupporters, simulateInstallmentContribution, voteOnInstallmentReserve,
-} from '../src/installment-state.mjs';
+} from '../domain/installment-state.mjs';
 
 const restored = (state) => JSON.parse(JSON.stringify(state));
 const diana = (state, variant = 'reserve') => getInstallmentCase(state, variant, 'diana');
