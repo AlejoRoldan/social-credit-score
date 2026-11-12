@@ -33,6 +33,7 @@
       <button type="button" class="secondary" data-go="support">Mi respaldo</button>
       <button type="button" class="secondary" data-go="inbox">Bandeja</button>
       <button type="button" class="secondary" data-go="finance">Bolsa del círculo</button>
+      <button type="button" class="secondary" data-go="project" hidden>Proyecto colectivo</button>
       <button type="button" class="secondary" data-go="installment">Cuota pendiente</button>
     </nav>
 
@@ -183,6 +184,36 @@
         <div><dt>Plataforma</dt><dd id="budget-platform"></dd></div>
         <div><dt>Personal</dt><dd id="budget-staff"></dd></div>
       </dl>
+      <button type="button" data-go="project" id="open-project">Abrir proyecto colectivo</button>
+    </section>
+
+    <section class="card" id="project" aria-labelledby="project-title" hidden>
+      <h1 id="project-title" tabindex="-1">Proyecto colectivo</h1>
+      <p id="project-denied" hidden>Este perfil no tiene acceso al proyecto del grupo artístico.</p>
+      <div id="project-content" class="project-content" hidden>
+        <dl class="facts" id="project-balances" aria-label="Bolsa del grupo artístico"></dl>
+        <p class="callout" id="project-status"></p>
+        <div id="project-current" class="project-content" hidden></div>
+        <div id="project-vote-actions" class="actions" role="group" aria-label="Votar sobre la propuesta" hidden>
+          <button type="button" data-project-vote="approve">Votar a favor</button>
+          <button type="button" class="secondary" data-project-vote="reject">Votar en contra</button>
+        </div>
+        <button type="button" id="project-confirm" hidden></button>
+        <form id="project-form" novalidate hidden>
+          <h2>Nueva propuesta</h2>
+          <label for="project-purpose">Finalidad</label>
+          <input id="project-purpose" name="purpose" value="Materiales para un taller" aria-describedby="project-error" required>
+          <label for="project-amount">Importe en COP</label>
+          <input id="project-amount" name="amount" type="number" inputmode="numeric" min="1" step="1" value="50000" aria-describedby="project-error" required>
+          <p id="project-error" aria-live="polite" hidden></p>
+          <button type="submit">Enviar propuesta</button>
+        </form>
+        <details id="project-history" hidden>
+          <summary>Propuestas anteriores</summary>
+          <div id="project-history-list" class="project-content"></div>
+        </details>
+        <button type="button" id="project-profile" class="secondary">Ir al selector de perfiles</button>
+      </div>
     </section>
 
     <section class="card" id="support" aria-labelledby="support-title" hidden>

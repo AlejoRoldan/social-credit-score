@@ -72,6 +72,15 @@ La regla ficticia de la demo divide los intereses totales de la ficha entre el p
 
 Los dos ejemplos también están disponibles desde «Cuota pendiente» en el recorrido normal. «Ir al recorrido normal» conserva el avance de la demo guiada, y «Reiniciar demo» repone la ficha de Luz con cuatro votos y reinicia los dos ejemplos guiados. Los cambios de cada recorrido se guardan en la sesión de la pestaña. Para verificar permisos, elige a Mateo o Rosa desde cualquiera de los dos ejemplos. En Chromium a 320 px, usa Tab, Enter y tacto emulado para recorrer los controles y comprobar el foco visible.
 
+## Probar la HU 2.3
+
+1. Abre «Bolsa del círculo» como Diana y elige «Abrir proyecto colectivo». El grupo artístico parte de $120.000 COP de saldo, $40.000 COP de reserva y $20.000 COP de compromisos. Tiene $60.000 COP disponibles para proyectos. Diana puede consultar el caso.
+2. Cambia a Ana. La finalidad precargada es «Materiales para un taller». Ingresa $65.000 COP y comprueba que el formulario muestra un exceso de $5.000 COP. Corrige el importe a $50.000 COP y elige «Enviar propuesta». La ficha conserva la finalidad, el importe y los cinco integrantes, con cero votos.
+3. Vota a favor como Ana, Camilo, Elena y José. Comprueba que el giro sigue bloqueado y los saldos se conservan. Cambia a Luz y emite el quinto voto. El importe permanece disponible hasta que un integrante elija «Confirmar giro de $50.000 COP».
+4. Confirma y comprueba que se registra un giro para la propuesta. El saldo queda en $70.000 COP y el disponible en $10.000 COP. La reserva, los compromisos, los intereses cobrados y los presupuestos de la operación conservan sus importes. Recarga la pestaña y comprueba el giro y los saldos. El ejemplo de «Cuota pendiente» mantiene sus propios saldos y decisiones.
+5. En una sesión nueva, vota en contra y verifica que el giro queda bloqueado. Envía otra propuesta por $60.000 COP y comprueba que parte con cero votos y que la ficha anterior aparece en «Propuestas anteriores». Tras cinco votos a favor y la confirmación, quedan $0 COP disponibles. Cambia a Mateo o Rosa para verificar que carecen de acceso al caso.
+6. En Chromium a 320 px, usa Tab y Enter o Espacio para abrir la ficha, enviar, votar y confirmar. Usa el selector de perfiles para emitir los cinco votos. Repite con tacto emulado y recarga para verificar el movimiento único.
+
 ## Documentación
 
 - [PRD v0.5](_bmad-output/initiative-credito-comunitario/prd-inclusion-financiera/prd-inclusion-financiera.md) con el alcance, las decisiones confirmadas y las preguntas abiertas.
