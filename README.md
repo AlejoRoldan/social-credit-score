@@ -2,7 +2,7 @@
 
 Proyecto en fase de diseño para explorar préstamos de bajo monto respaldados por círculos de confianza. La primera prueba será una demo navegable con datos ficticios para personas con ingresos variables y sin cuenta bancaria en Medellín. Se plantea como alternativa al pagadiario o gota a gota.
 
-El alcance previsto de la demo abarca la solicitud y su votación, el uso de la bolsa del círculo ante una cuota impaga y una propuesta de proyecto colectivo. La HU 1.1 permite preparar una solicitud de ejemplo y entregar su ficha a las personas que confirmaron su respaldo. La HU 1.2 permite que el grupo vote o pause la decisión para una reunión. La HU 1.3 comprueba el costo y habilita el desembolso simulado cuando también hay unanimidad.
+El alcance previsto de la demo abarca la solicitud y su votación, el uso de la bolsa del círculo ante una cuota impaga y una propuesta de proyecto colectivo. La HU 1.1 permite preparar una solicitud de ejemplo y entregar su ficha a las personas que confirmaron su respaldo. La HU 1.2 permite que el grupo vote o pause la decisión para una reunión. La HU 1.3 comprueba el costo y habilita el desembolso simulado cuando también hay unanimidad. La HU 2.1 muestra la bolsa y registra el principal contra el presupuesto de créditos.
 
 ## Probar la HU 1.1
 
@@ -26,7 +26,7 @@ node --test
 
 ## Probar la HU 1.2 con seis perfiles
 
-1. Antes de enviar, acepta como Luz. Como Diana, invita a Mateo y acepta desde su perfil. Invita también a Rosa y deja su invitación pendiente. Envía como Diana. Ana, Camilo, Elena, José, Luz y Mateo reciben la versión 1. Rosa sigue con la bandeja vacía y Diana ve el estado en su propia vista.
+1. Antes de enviar, elige 4 semanas para que el costo deje disponible la edición tras la primera votación. Acepta como Luz. Como Diana, invita a Mateo y acepta desde su perfil. Invita también a Rosa y deja su invitación pendiente. Envía como Diana. Ana, Camilo, Elena, José, Luz y Mateo reciben la versión 1. Rosa sigue con la bandeja vacía y Diana ve el estado en su propia vista.
 2. Abre la ficha en la bandeja de Ana y vota a favor. Como Camilo, elige «Dejar pendiente para reunión». Vuelve a abrir la versión 1 desde la bandeja y comprueba que muestra «Pendiente de reunión» y ofrece «Retomar votación». Diana también ve el estado pendiente.
 3. Retoma como Elena. Comprueba que sigue siendo la versión 1 y la ronda 2 comienza con cero votos. Ana puede consultar el voto que registró en la ronda 1.
 4. Para probar la unanimidad, vota a favor desde cinco perfiles y comprueba en la vista de Diana que sigue «En revisión». El sexto voto favorable cambia el estado a «Aprobada por el grupo».
@@ -41,10 +41,19 @@ La demo conserva el borrador, el grupo, las fichas y sus rondas en la sesión de
 1. En una sesión nueva, elige $300.000 COP a 4 semanas y continúa al grupo. Acepta el respaldo como Luz. Vuelve a Diana, abre «Revisa y envía» y comprueba la tasa semanal ilustrativa de 2,5 %, los $30.000 COP de intereses, la cuota de $82.500 COP y el total de $330.000 COP.
 2. Envía y vota a favor desde las fichas de Ana, Camilo, Elena, José y Luz. Como Diana, comprueba que el grupo aprobó la solicitud y que el desembolso simulado quedó bloqueado por costo. La tasa supera por 0,5 puntos porcentuales el límite ficticio de 2 % semanal.
 3. Elige «Preparar una nueva versión», conserva el monto y cambia a 8 semanas. Comprueba que la edición muestra una tasa de 1,25 % y una cuota de $41.250 COP, con los mismos intereses y total. Envía y verifica que la versión 2 queda pendiente de aprobación con cero votos. En la bandeja de Ana, la versión 1 conserva sus condiciones y votos.
-4. Vota a favor desde los cinco perfiles en la versión 2 y vuelve a Diana. El desembolso simulado figura como «Habilitado». Recarga y verifica que se mantiene. Para probar la igualdad con el límite, crea una versión a 5 semanas y consigue unanimidad. Una tasa de 2 % también habilita el desembolso simulado.
+4. Vota a favor desde los cinco perfiles en la versión 2 y vuelve a Diana. Aparece «Desembolso simulado registrado». Recarga y verifica que se mantiene. Para probar la igualdad con el límite, repite en una sesión nueva con un plazo de 5 semanas. Una tasa de 2 % también permite registrar el desembolso simulado.
 5. En Chromium a 320 px, usa el teclado para recorrer las dos fichas. Comprueba que se ven el foco, la tasa, la cuota, los intereses y el total.
 
 La regla ficticia de la demo divide los intereses totales de la ficha entre el principal y el plazo en semanas. `getDisbursementAuthorization(state)` devuelve `{ id, version, principalCop }` cuando la versión vigente cumple el límite y su última ronda es unánime, y `null` en los demás casos.
+
+## Probar la HU 2.1
+
+1. En una sesión nueva, abre «Bolsa del círculo» como Diana. Comprueba los cinco importes de la bolsa en COP ($150.000 de intereses cobrados, $120.000 de saldo, $40.000 de reserva, $20.000 de compromisos y $60.000 disponibles) y las tres partidas de operación ($1.000.000 para créditos, $300.000 para plataforma y $200.000 para personal).
+2. Cambia a Ana y abre la bolsa. Cambia a Luz antes de aceptar su invitación y verifica que la opción desaparece. Tras el envío, solo Diana y los integrantes de la versión vigente pueden abrir el tablero. El paso 5 del recorrido de HU 1.2 permite verificar la exclusión de Mateo.
+3. Acepta el respaldo como Luz. Envía como Diana una solicitud de $300.000 COP a 5 semanas y vota a favor como Ana, Camilo, Elena, José y Luz. Como Diana, comprueba el mensaje «Desembolso simulado registrado» por $300.000 COP y que ya no aparece la opción para preparar una nueva versión.
+4. Abre la bolsa y comprueba que créditos muestra $700.000 COP, plataforma $300.000 COP y personal $200.000 COP. Las cinco cifras de la bolsa mantienen sus valores. Recarga la pestaña, comprueba el estado de Diana y abre de nuevo la bolsa para verificar los mismos importes.
+5. Repite a 320 px de ancho en Chromium. Abre la bolsa y vuelve a «Mi solicitud» con Tab y Enter. Comprueba que el foco es visible y que los controles miden al menos 44 × 44 px.
+6. Para comprobar el bloqueo por costo, repite en una sesión nueva con un plazo de 4 semanas y cinco votos a favor. Diana ve «Bloqueado por costo» y el presupuesto de créditos sigue en $1.000.000 COP. `node --test` cubre también el bloqueo por falta de autorización, versión obsoleta y saldo insuficiente, así como el registro único al restaurar una ficha ya autorizada.
 
 ## Documentación
 

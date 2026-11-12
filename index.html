@@ -22,9 +22,11 @@
   <main class="shell">
     <p id="announcement" class="sr-only" role="status"></p>
     <noscript>Activa JavaScript para recorrer la demo.</noscript>
-    <nav id="support-navigation" aria-label="Vistas del respaldante" hidden>
+    <nav id="navigation" aria-label="Vistas del perfil" hidden>
+      <button type="button" class="secondary" data-go="application">Mi solicitud</button>
       <button type="button" class="secondary" data-go="support">Mi respaldo</button>
       <button type="button" class="secondary" data-go="inbox">Bandeja</button>
+      <button type="button" class="secondary" data-go="finance">Bolsa del círculo</button>
     </nav>
 
     <section class="card" id="needs" aria-labelledby="needs-title" hidden>
@@ -119,10 +121,28 @@
       <div class="callout decision-status">
         <p>Desembolso simulado</p>
         <strong id="applicant-disbursement"></strong>
+        <p id="applicant-disbursement-amount" hidden></p>
         <p id="applicant-cost"></p>
       </div>
       <p>Para ver cómo les llegó, cambia al perfil de prueba de una persona que confirmó.</p>
       <button type="button" id="edit-revision" class="secondary">Preparar una nueva versión</button>
+    </section>
+
+    <section class="card" id="finance" aria-labelledby="finance-title" hidden>
+      <h1 id="finance-title" tabindex="-1">Bolsa del círculo</h1>
+      <dl class="facts">
+        <div><dt>Intereses cobrados</dt><dd id="fund-interest"></dd></div>
+        <div><dt>Saldo</dt><dd id="fund-balance"></dd></div>
+        <div><dt>Reserva</dt><dd id="fund-reserve"></dd></div>
+        <div><dt>Compromisos</dt><dd id="fund-commitments"></dd></div>
+        <div class="finance-available"><dt>Disponible</dt><dd id="fund-available"></dd></div>
+      </dl>
+      <h2>Presupuestos de la operación</h2>
+      <dl class="facts">
+        <div><dt>Créditos</dt><dd id="budget-credit"></dd></div>
+        <div><dt>Plataforma</dt><dd id="budget-platform"></dd></div>
+        <div><dt>Personal</dt><dd id="budget-staff"></dd></div>
+      </dl>
     </section>
 
     <section class="card" id="support" aria-labelledby="support-title" hidden>

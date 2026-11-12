@@ -1,9 +1,12 @@
 import {
   amounts, applicant, checkCost, contributionLimit, countConfirmed, createDemoState, getApplicationStatus, getInbox,
-  getSupportStatus, inviteSupporter, loanDetails, migrateLegacyRequest, minimumSupporters, reasons,
+  getRecordedDisbursement, getSupportStatus, inviteSupporter, loanDetails, minimumSupporters, reasons,
   pauseForMeeting, recordVote, respondToInvitation, resumeAfterMeeting, submitApplication,
   submitRevision, supporters, terms, updateDraft,
 } from './demo-state.mjs';
+import {
+  canViewFinance, getDisbursementStatus, getFinanceDashboard, registerDisbursement, restoreFinance,
+} from './finance-state.mjs';
 
 const storageKey = 'credito-comunitario-hu-1-1';
 const currency = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
@@ -30,11 +33,11 @@ const draftForm = byId('draft-form');
 const inviteForm = byId('invite-form');
 const invitee = byId('invitee');
 const responseForm = byId('response-form');
-const navigation = byId('support-navigation');
+const navigation = byId('navigation');
 const sections = document.querySelectorAll('main section');
 const applicantViews = ['needs', 'circle', 'review', 'success'];
 const state = loadState();
-if (migrateLegacyRequest(state)) saveState();
+if (restoreFinance(state)) saveState();
 let applicantView = 'needs';
 let editingVersion = null;
 let selectedVersion = null;
@@ -137,7 +140,7 @@ function ownDecision({ decision }) {
 }
 
 function renderApplicantStatus() {
-  const { version, round, cost, authorization } = getApplicationStatus(state, applicant.id);
+  const { version, round, cost } = getApplicationStatus(state, applicant.id);
   byId('applicant-version').textContent = `Versión ${version} · Ronda ${round.number}`;
   byId('applicant-status').textContent = votingStatus[round.status];
   byId('applicant-votes').textContent = voteProgress(round);
@@ -149,11 +152,21 @@ function renderApplicantStatus() {
   }[round.status];
 
   const { weeklyRate, limit, withinLimit } = cost;
-  let disbursementStatus = 'Pendiente de aprobación del grupo';
-  if (authorization) disbursementStatus = 'Habilitado';
-  else if (!withinLimit) disbursementStatus = 'Bloqueado por costo';
-  else if (round.status === 'rejected') disbursementStatus = 'Bloqueado por la decisión del grupo';
+  const disbursement = getDisbursementStatus(state);
+  const disbursementStatus = {
+    recorded: 'Desembolso simulado registrado',
+    authorized: 'Habilitado',
+    'cost-limit': 'Bloqueado por costo',
+    'insufficient-credit': 'Bloqueado por saldo insuficiente en el presupuesto de créditos',
+    'not-authorized': round.status === 'rejected'
+      ? 'Bloqueado por la decisión del grupo'
+      : 'Pendiente de aprobación del grupo',
+  }[disbursement.status];
   byId('applicant-disbursement').textContent = disbursementStatus;
+  const amount = byId('applicant-disbursement-amount');
+  amount.hidden = !disbursement.movement;
+  amount.textContent = disbursement.movement ? money(disbursement.movement.principalCop) : '';
+  byId('edit-revision').hidden = Boolean(disbursement.movement);
 
   const displayedRate = percent.format(weeklyRate);
   const displayedLimit = percent.format(limit);
@@ -166,6 +179,20 @@ function renderApplicantStatus() {
   byId('applicant-cost').textContent = withinLimit
     ? `${comparison} El costo cumple la regla de la demo.`
     : `${comparison} La tasa supera el límite por ${percentagePoints.format(excess)} puntos porcentuales.`;
+}
+
+function renderFinance({ fund, budget }) {
+  const figures = {
+    'fund-interest': fund.interestCollectedCop,
+    'fund-balance': fund.balanceCop,
+    'fund-reserve': fund.reserveCop,
+    'fund-commitments': fund.commitmentsCop,
+    'fund-available': fund.availableCop,
+    'budget-credit': budget.creditCop,
+    'budget-platform': budget.platformCop,
+    'budget-staff': budget.staffCop,
+  };
+  for (const [id, amount] of Object.entries(figures)) byId(id).textContent = money(amount);
 }
 
 function renderInbox(notices) {
@@ -223,10 +250,15 @@ function renderSheet({ application, limit, version, isCurrent, rounds }) {
 
 function show(requestedView, moveFocus = true) {
   const isApplicant = profile.value === applicant.id;
+  const financeAllowed = canViewFinance(state, profile.value);
   let view = requestedView;
 
-  if (isApplicant) {
-    if (state.sent && !(view === 'needs' && editingVersion)) view = 'success';
+  if (view === 'finance' && financeAllowed) {
+    renderFinance(getFinanceDashboard(state, profile.value));
+  } else if (isApplicant) {
+    if (view === 'application') view = applicantView;
+    const canContinueRevision = view === 'needs' && editingVersion && !getRecordedDisbursement(state);
+    if (state.sent && !canContinueRevision) view = 'success';
     else if (!applicantViews.includes(view) || view === 'success') view = 'needs';
     else if (view === 'review' && countConfirmed(state) < minimumSupporters) view = 'circle';
 
@@ -243,7 +275,7 @@ function show(requestedView, moveFocus = true) {
   } else {
     const notices = getInbox(state, profile.value);
     const notice = notices.find(({ version }) => version === selectedVersion);
-    if (applicantViews.includes(view) || (view === 'sheet' && !notice)) view = 'inbox';
+    if (!['support', 'inbox', 'sheet'].includes(view) || (view === 'sheet' && !notice)) view = 'inbox';
     const status = getSupportStatus(state, profile.value);
     const excluded = state.sent && status === 'confirmed' && !notices.some(({ isCurrent }) => isCurrent);
     renderSupport(excluded ? 'excluded' : status);
@@ -251,10 +283,12 @@ function show(requestedView, moveFocus = true) {
     if (view === 'sheet') renderSheet(notice);
   }
 
-  navigation.hidden = isApplicant;
+  navigation.hidden = false;
+  const currentView = view === 'finance' ? view : isApplicant ? 'application' : view === 'sheet' ? 'inbox' : view;
   for (const button of navigation.querySelectorAll('[data-go]')) {
-    const current = button.dataset.go === (view === 'sheet' ? 'inbox' : view);
-    if (current) button.setAttribute('aria-current', 'page');
+    const destination = button.dataset.go;
+    button.hidden = destination === 'finance' ? !financeAllowed : (destination === 'application') !== isApplicant;
+    if (destination === currentView) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
   }
   for (const section of sections) section.hidden = section.id !== view;
@@ -342,7 +376,7 @@ draftForm.addEventListener('submit', (event) => {
 
 byId('edit-revision').addEventListener('click', () => {
   const current = getApplicationStatus(state, profile.value);
-  if (!current) return;
+  if (!current || getRecordedDisbursement(state)) return;
 
   editingVersion = current.version;
   const { amount, reason, weeks } = current.application;
@@ -383,6 +417,7 @@ byId('voting-actions').addEventListener('click', (event) => {
       : recordVote(...selection, decision);
   if (!updated) return;
 
+  if (decision === 'approve') registerDisbursement(state);
   saveState();
   show('sheet');
   announce(`${byId('sheet-status').textContent}. ${byId('sheet-votes').textContent}. ${byId('sheet-decision').textContent}`);

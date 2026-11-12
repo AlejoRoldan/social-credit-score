@@ -169,6 +169,10 @@ export function getDisbursementAuthorization(state) {
   return getApplicationStatus(state, applicant.id)?.authorization ?? null;
 }
 
+export function getRecordedDisbursement(state) {
+  return state.disbursements?.find(({ requestId }) => requestId === state.requestId) ?? null;
+}
+
 export function getInbox(state, profileId) {
   const current = currentVersion(state);
   if (!current) return [];
@@ -190,7 +194,7 @@ export function getInbox(state, profileId) {
 
 export function submitRevision(state, profileId, version, details, electorate) {
   const current = currentVersion(state);
-  if (!current || profileId !== applicant.id || current.version !== version ||
+  if (!current || profileId !== applicant.id || current.version !== version || getRecordedDisbursement(state) ||
       !details || !validDetails(details) || !Array.isArray(electorate)) return false;
 
   const recipients = new Set(electorate);
