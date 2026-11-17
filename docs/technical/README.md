@@ -1,5 +1,7 @@
 # Arquitectura y operación
 
+El RFC de V2 enlaza las decisiones de arquitectura y el backlog de implementación. [RFC de Entrevecinos V2](rfc-entrevecinos-v2.md)
+
 ## Ejecución
 
 `node serve.mjs` inicia el servidor en la interfaz local. El punto de entrada es `/`. [El servidor](../../backend/server.mjs) sirve únicamente el HTML, los estilos y los módulos de la aplicación. Las rutas de entrada `/index.html`, `/styles.css` y `/src/app.mjs` apuntan a sus archivos reorganizados.
@@ -20,8 +22,8 @@
 
 ## Verificación
 
-- `node --test` ejecuta las 43 pruebas del dominio en [backend/test](../../backend/test).
-- `node --test e2e/flows.mjs` ejecuta siete escenarios de navegador. Cubren arranque, recuperación de sesión dañada, teclado, recarga, revisión, privacidad por perfil, votaciones y los flujos de crédito, impago y proyecto.
+- `node --test` ejecuta las pruebas del dominio en [backend/test](../../backend/test).
+- `node --test e2e/flows.mjs` ejecuta los escenarios de navegador. Cubren arranque, recuperación de sesión dañada, teclado, recarga, revisión, privacidad por perfil, votaciones y los flujos de crédito, impago y proyecto. El recorrido de **Mi crédito** verifica la revisión del pago, su cancelación y confirmación, el comprobante, el saldo, la ayuda privada y la restauración al recargar.
 - En la validación de integración pasaron las 43 pruebas de dominio y los 7 escenarios E2E en Chromium. Se verificaron el desembolso único, el uso de la reserva con unanimidad, la conservación de saldos tras un rechazo y el giro colectivo con confirmación explícita.
 - Si Chromium no se detecta, establece `BROWSER_PATH`. El entorno restringido de verificación requirió `BROWSER_NO_SANDBOX=1` para el proceso de Chromium de prueba.
 - Los planes de BMAD conservan referencias a la estructura histórica. La interfaz pasó de `src/app.mjs` a `frontend/src/app.mjs`. Los módulos `src/*-state.mjs` se encuentran en `backend/domain/` y las pruebas de `test/` están en `backend/test/`.

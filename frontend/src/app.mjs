@@ -1,6 +1,6 @@
 import {
   amounts, applicant, checkCost, contributionLimit, countConfirmed, createDemoState, getApplicationStatus, getInbox,
-  getDisbursementAuthorization, getInstallmentReminder, getRecordedDisbursement, getSupportStatus, inviteSupporter,
+  firstInstallmentDueDate, getDisbursementAuthorization, getInstallmentReminder, getRecordedDisbursement, getSupportStatus, inviteSupporter,
   isStoredDemoState, loanDetails, minimumSupporters, reasons,
   pauseForMeeting, recordInstallmentIntention, recordVote, respondToInvitation, resumeAfterMeeting, submitApplication,
   submitRevision, supporters, terms, updateDraft,
@@ -15,6 +15,7 @@ import {
   canViewProject, confirmProjectTransfer, getProjectCase, submitProjectProposal, validateProjectProposal, voteOnProject,
 } from '../../backend/domain/project-state.mjs';
 import { getCircleScore, getOwnScore, scoreComparisonExamples } from '../../backend/domain/score-state.mjs';
+import { getLoanAccount, helpReasons, payNextInstallment, requestLoanHelp } from '../../backend/domain/loan-account-state.mjs';
 
 const storageKey = 'credito-comunitario-hu-1-1';
 const presentationKey = 'credito-comunitario-hu-2-2';
@@ -43,6 +44,7 @@ const votingStatus = {
 
 const byId = (id) => document.getElementById(id);
 const profile = byId('profile');
+const demoControls = profile.closest('.demo-controls');
 const draftForm = byId('draft-form');
 const projectForm = byId('project-form');
 const inviteForm = byId('invite-form');
@@ -50,6 +52,8 @@ const invitee = byId('invitee');
 const responseForm = byId('response-form');
 const navigation = byId('navigation');
 const installmentReminder = byId('installment-reminder');
+const paymentDialog = byId('payment-dialog');
+const helpForm = byId('account-help-form');
 const sections = document.querySelectorAll('main section');
 const applicantViews = ['needs', 'circle', 'review', 'success'];
 const guidedVoter = installmentSupporters.at(-1);
@@ -63,6 +67,7 @@ let editingVersion = null;
 let selectedVersion = null;
 let installmentVariant = 'reserve';
 let currentView;
+let reviewedPayment;
 
 function loadSession(key, fallback, isValid) {
   try {
@@ -139,7 +144,7 @@ function openJourney(useGuide, reset = false, moveFocus = true) {
   byId('start-demo').textContent = presentation.guided ? 'Continuar demo' : 'Iniciar demo';
   byId('reset-demo').hidden = !presentation.guided;
   byId('exit-demo').hidden = !guided;
-  show(saved?.view ?? applicantView, moveFocus);
+  show(saved?.view ?? (state.sent ? applicantView : 'home'), moveFocus);
 }
 
 function announce(message) {
@@ -153,6 +158,7 @@ function fillDetails(section, details) {
     ...details,
     amount: money(details.amount),
     weeks: `${details.weeks} semanas`,
+    firstDue: reminderDate.format(new Date(firstInstallmentDueDate)),
     installment: money(details.installment),
     interest: money(details.interest),
     total: money(details.total),
@@ -173,10 +179,12 @@ function fillDetails(section, details) {
 function renderCircle() {
   const confirmed = countConfirmed(state);
   const missing = minimumSupporters - confirmed;
+  byId('circle-title').textContent = missing > 0 ? 'Pendiente de respaldos' : 'Respaldos completos';
   byId('progress').textContent = missing > 0
-    ? `${confirmed} de ${minimumSupporters} personas confirmaron. ${missing === 1 ? 'Te falta 1.' : `Te faltan ${missing}.`}`
-    : `${confirmed} personas confirmaron. Ya puedes revisar la solicitud.`;
+    ? `${confirmed} de ${minimumSupporters} respaldos confirmados. ${missing === 1 ? 'Falta 1 respaldo.' : `Faltan ${missing} respaldos.`}`
+    : `${confirmed} respaldos confirmados. Ya puedes revisar la solicitud.`;
   byId('review-button').disabled = missing > 0;
+  byId('support-next').hidden = missing <= 0;
   byId('pending-hint').hidden = !supporters.some(({ id }) => getSupportStatus(state, id) === 'pending');
 
   const members = [];
@@ -199,12 +207,14 @@ function renderCircle() {
   inviteForm.hidden = available.length === 0;
 }
 
-function renderSupport(status) {
+function renderSupport(status, currentNotice) {
   const explanation = {
-    confirmed: 'Aceptaste respaldar esta solicitud.',
-    excluded: 'Puedes consultar en la bandeja las fichas que recibiste en versiones anteriores.',
-    pending: 'Puedes decidir si aceptas ese compromiso.',
-    declined: 'Decidiste no respaldar esta solicitud.',
+    confirmed: currentNotice
+      ? 'Aceptaste respaldar esta solicitud. Ya puedes consultar la ficha vigente.'
+      : `Aceptaste respaldar esta solicitud. Podrás votar cuando ${applicant.name} reúna los respaldos necesarios y envíe la ficha.`,
+    excluded: 'Tu perfil está fuera del grupo habilitado para votar en la versión vigente. En la bandeja puedes consultar las fichas anteriores que recibiste.',
+    pending: '',
+    declined: 'Rechazaste el respaldo. Tu respuesta no cuenta para el mínimo de respaldos.',
     uninvited: `${applicant.name} aún no te ha invitado a respaldar esta solicitud.`,
   };
 
@@ -216,6 +226,7 @@ function renderSupport(status) {
   byId('commitment').querySelector('[data-limit]').textContent = money(contributionLimit);
   byId('support-explanation').textContent = explanation[status];
   responseForm.hidden = !canRespond;
+  byId('open-current-sheet').hidden = !currentNotice;
   if (status === 'pending' && state.sent) {
     byId('support-explanation').textContent = 'La solicitud ya se envió a quienes habían confirmado.';
   }
@@ -238,49 +249,78 @@ function renderReminderIntention(intention) {
   installmentReminder.querySelector('[data-reminder-next-step]').textContent = reminderNextSteps[intention] ?? '';
 }
 
-function renderInstallmentReminder(reminder) {
+function renderInstallmentReminder(reminder, next) {
   installmentReminder.replaceChildren();
-  if (!reminder) return;
+  if (!reminder || !next) return;
 
   const content = byId('installment-reminder-template').content.cloneNode(true);
   const time = content.querySelector('time');
-  time.dateTime = reminder.dueDate;
-  time.textContent = reminderDate.format(new Date(reminder.dueDate));
-  content.querySelector('[data-reminder-amount]').textContent = money(reminder.amountCop);
+  time.dateTime = next.dueDate;
+  time.textContent = reminderDate.format(new Date(next.dueDate));
+  content.querySelector('[data-reminder-amount]').textContent = money(next.amountCop);
   installmentReminder.append(content);
   renderReminderIntention(reminder.intention);
 }
 
 function renderApplicantStatus() {
-  const { version, round, cost } = getApplicationStatus(state, applicant.id);
+  const { version, round, cost, application } = getApplicationStatus(state, applicant.id);
+  const disbursement = getDisbursementStatus(state);
+  const recorded = Boolean(disbursement.movement);
+  const votesMissing = round.electorateSize - round.approvals - round.rejections;
+  const blocked = round.status === 'approved' &&
+    ['cost-limit', 'insufficient-credit'].includes(disbursement.status);
+  byId('success-title').textContent = recorded ? 'Desembolso simulado registrado'
+    : blocked ? 'Desembolso bloqueado'
+      : {
+        review: 'Solicitud pendiente de votos',
+        meeting: 'Solicitud pendiente de reunión',
+        approved: 'Solicitud aprobada',
+        rejected: 'Solicitud rechazada',
+      }[round.status];
   byId('applicant-version').textContent = `Versión ${version} · Ronda ${round.number}`;
   byId('applicant-status').textContent = votingStatus[round.status];
   byId('applicant-votes').textContent = voteProgress(round);
   byId('applicant-decision').textContent = {
-    review: 'El grupo necesita todos los votos a favor para aprobar la solicitud.',
-    meeting: 'El grupo pausó la votación para deliberar. Cuando la retome, empezará una nueva ronda.',
+    review: votesMissing === 1
+      ? 'Falta 1 voto. La persona que falta debe abrir la ficha y votar.'
+      : `Faltan ${votesMissing} votos. Las personas que faltan deben abrir la ficha y votar.`,
+    meeting: 'El grupo debe reunirse y retomar la votación desde la ficha para abrir una nueva ronda.',
     approved: 'El grupo aprobó la solicitud por unanimidad.',
-    rejected: 'El grupo completó la votación con al menos un voto en contra.',
+    rejected: 'El grupo completó la votación con al menos un voto en contra. Puedes preparar una nueva versión para que el grupo vuelva a decidir.',
   }[round.status];
 
   const { weeklyRate, limit, withinLimit } = cost;
-  const disbursement = getDisbursementStatus(state);
   const disbursementStatus = {
     recorded: 'Desembolso simulado registrado',
     authorized: 'Habilitado',
     'cost-limit': 'Bloqueado por costo',
     'insufficient-credit': 'Bloqueado por saldo insuficiente en el presupuesto de créditos',
-    'not-authorized': round.status === 'rejected'
-      ? 'Bloqueado por la decisión del grupo'
-      : 'Pendiente de aprobación del grupo',
   }[disbursement.status];
-  byId('applicant-disbursement').textContent = disbursementStatus;
+  const disbursementLabel = round.status === 'approved' ? disbursementStatus
+    : round.status === 'rejected' ? 'Bloqueado por la decisión del grupo' : 'Pendiente de aprobación del grupo';
+  byId('applicant-disbursement').textContent = disbursementLabel;
+  byId('step-approval').textContent = votingStatus[round.status];
+  byId('step-disbursement').textContent = disbursementLabel;
+  byId('step-approval').setAttribute('aria-current', round.status === 'approved' ? 'false' : 'step');
+  byId('step-disbursement').setAttribute('aria-current', round.status === 'approved' ? 'step' : 'false');
   const amount = byId('applicant-disbursement-amount');
-  amount.hidden = !disbursement.movement;
-  amount.textContent = disbursement.movement ? money(disbursement.movement.principalCop) : '';
-  byId('edit-revision').hidden = Boolean(disbursement.movement);
-  byId('simulate-installment').hidden = !guided || !disbursement.movement;
-  byId('application-profile-hint').hidden = guided && Boolean(disbursement.movement);
+  amount.hidden = !recorded;
+  amount.textContent = recorded ? money(disbursement.movement.principalCop) : '';
+  const next = byId('applicant-disbursement-next');
+  next.hidden = !blocked;
+  next.textContent = '';
+  if (blocked) {
+    next.textContent = 'Puedes preparar una nueva versión con un plazo que cumpla el límite de costo.';
+    if (disbursement.status === 'insufficient-credit') {
+      const available = getFinanceDashboard(state, applicant.id).budget.creditCop;
+      next.textContent = `La solicitud es de ${money(application.amount)} y el presupuesto dispone de ${money(available)}. Puedes preparar una nueva versión con un monto dentro del saldo disponible.`;
+    }
+  }
+  const edit = byId('edit-revision');
+  edit.hidden = recorded;
+  edit.classList.toggle('secondary', !blocked && round.status !== 'rejected');
+  byId('simulate-installment').hidden = !guided || !recorded;
+  byId('open-account').hidden = !recorded;
 
   const displayedRate = percent.format(weeklyRate);
   const displayedLimit = percent.format(limit);
@@ -293,6 +333,39 @@ function renderApplicantStatus() {
   byId('applicant-cost').textContent = withinLimit
     ? `${comparison} El costo cumple la regla de la demo.`
     : `${comparison} La tasa supera el límite por ${percentagePoints.format(excess)} puntos porcentuales.`;
+}
+
+function renderLoanAccount(account) {
+  const { next, outstandingCop, paidCount, installments, helpReason } = account;
+  byId('account-next-label').textContent = next ? 'Próxima cuota' : 'Crédito pagado';
+  byId('account-next-amount').textContent = money(next?.amountCop ?? 0);
+  byId('account-next-date').textContent = next ? reminderDate.format(new Date(next.dueDate)) : 'Pagaste todas las cuotas de esta simulación.';
+  byId('account-balance').textContent = money(outstandingCop);
+  byId('payment-progress-label').textContent = `${paidCount} de ${installments.length} cuotas pagadas`;
+  const progress = byId('payment-progress');
+  progress.max = installments.length;
+  progress.value = paidCount;
+  byId('review-payment').hidden = !next;
+  byId('account-installments').replaceChildren(...installments.map(({ number, dueDate, amountCop, paid, reference }) => {
+    const row = document.createElement('li');
+    const title = document.createElement('strong');
+    title.textContent = `Cuota ${number} · ${money(amountCop)}`;
+    const detail = document.createElement('span');
+    const due = reminderDate.format(new Date(dueDate));
+    detail.textContent = paid ? `Pagada · Vencía el ${due} · Comprobante ${reference}` : `Pendiente · Vence el ${due}`;
+    row.append(title, detail);
+    return row;
+  }));
+  const lastPayment = installments[paidCount - 1];
+  const receipt = byId('payment-receipt');
+  receipt.hidden = !lastPayment;
+  receipt.textContent = lastPayment
+    ? `Último pago simulado: cuota ${lastPayment.number} por ${money(lastPayment.amountCop)}. Comprobante ${lastPayment.reference}.` : '';
+  helpForm.hidden = Boolean(helpReason) || !next;
+  const status = byId('account-help-status');
+  status.hidden = !helpReason;
+  status.textContent = helpReason ? `Solicitud simulada registrada. Motivo: ${helpReason}.` : '';
+  byId('account-help').hidden = !next && !helpReason;
 }
 
 function renderOwnScore(score) {
@@ -568,6 +641,7 @@ function renderSheet({ application, limit, version, isCurrent, rounds }) {
   byId('sheet-status').textContent = votingStatus[round.status];
   byId('sheet-votes').textContent = voteProgress(round);
   byId('sheet-decision').textContent = ownDecision(round);
+  byId('sheet-history-restriction').hidden = isCurrent;
 
   const canPause = isCurrent && round.status === 'review';
   const canResume = isCurrent && round.status === 'meeting';
@@ -594,12 +668,17 @@ function show(requestedView, moveFocus = true) {
   const isApplicant = profile.value === applicant.id;
   const financeAllowed = canViewFinance(state, profile.value);
   const installmentAllowed = !guided || Boolean(getRecordedDisbursement(state));
+  const account = getLoanAccount(state, profile.value);
   let view = requestedView;
 
   if (view !== 'score') renderOwnScore(null);
   if (!financeAllowed) renderFinance(null, null);
 
-  if (view === 'score') {
+  if (view === 'account' && account) {
+    renderLoanAccount(account);
+  } else if (view === 'home') {
+    byId('home-application').textContent = state.sent ? 'Ver mi solicitud' : 'Simular un préstamo';
+  } else if (view === 'score') {
     renderOwnScore(getOwnScore(profile.value));
   } else if (view === 'project') {
     renderProject();
@@ -620,6 +699,7 @@ function show(requestedView, moveFocus = true) {
       renderApplicantStatus();
     }
     if (view === 'circle') renderCircle();
+    if (view === 'needs') renderCostPreview();
     if (view === 'review') {
       fillDetails('review', loanDetails(state.draft));
       byId('review-recipients').textContent = `Recibirán la ficha las ${countConfirmed(state)} personas que confirmaron.`;
@@ -629,23 +709,33 @@ function show(requestedView, moveFocus = true) {
     const notice = notices.find(({ version }) => version === selectedVersion);
     if (!['support', 'inbox', 'sheet'].includes(view) || (view === 'sheet' && !notice)) view = 'inbox';
     const status = getSupportStatus(state, profile.value);
-    const excluded = state.sent && status === 'confirmed' && !notices.some(({ isCurrent }) => isCurrent);
-    renderSupport(excluded ? 'excluded' : status);
+    const currentNotice = notices.find(({ isCurrent }) => isCurrent);
+    const excluded = state.sent && status === 'confirmed' && !currentNotice;
+    renderSupport(excluded ? 'excluded' : status, currentNotice);
     if (view === 'inbox') renderInbox(notices);
     if (view === 'sheet') renderSheet(notice);
   }
 
-  renderInstallmentReminder(view === 'success' ? getInstallmentReminder(state, profile.value) : null);
+  if (view !== 'account' && currentView === 'account') {
+    reviewedPayment = null;
+    paymentDialog.close();
+    byId('account-installments').replaceChildren();
+    for (const id of ['account-next-amount', 'account-next-date', 'account-balance', 'payment-progress-label',
+      'payment-receipt', 'account-help-status', 'payment-summary']) byId(id).textContent = '';
+    byId('payment-progress').value = 0;
+    helpForm.reset();
+  }
+  renderInstallmentReminder(view === 'success' ? getInstallmentReminder(state, profile.value) : null, account?.next);
   navigation.hidden = false;
   byId('guided-vote').hidden = installmentAllowed || (profile.value === guidedVoter && view === 'sheet');
   const navView = view === 'project' && financeAllowed ? 'finance'
-    : ['finance', 'installment', 'project', 'score'].includes(view) ? view
+    : ['home', 'account', 'finance', 'installment', 'project', 'score'].includes(view) ? view
       : isApplicant ? 'application' : view === 'sheet' ? 'inbox' : view;
   for (const button of navigation.querySelectorAll('[data-go]')) {
     const destination = button.dataset.go;
-    button.hidden = destination === 'finance' ? !financeAllowed : destination === 'installment' ? !installmentAllowed
+    button.hidden = destination === 'account' ? !account : destination === 'finance' ? !financeAllowed : destination === 'installment' ? !installmentAllowed
       : destination === 'project' ? financeAllowed || !canViewProject(profile.value)
-        : destination !== 'score' && (destination === 'application') !== isApplicant;
+        : !['score', 'home'].includes(destination) && (destination === 'application') !== isApplicant;
     if (destination === navView) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
   }
@@ -679,9 +769,47 @@ function saveDraft() {
 }
 
 function renderCostPreview() {
-  fillDetails('revision-preview', loanDetails(readDetails(new FormData(draftForm))));
+  const draft = readDetails(new FormData(draftForm));
+  fillDetails('revision-preview', loanDetails(draft));
   byId('revision-preview').hidden = false;
+  renderTermComparison(draft);
 }
+
+const termComparison = byId('term-comparison');
+const alternativeWeeks = byId('alternative-weeks');
+for (const list of termComparison.querySelectorAll('[data-term-facts]')) {
+  for (const [field, label] of [
+    ['amount', 'Recibes'], ['installment', 'Cuota semanal'], ['total', 'Total a pagar'],
+    ['firstDue', 'Primer vencimiento'], ['interest', 'Intereses de ejemplo'], ['weeklyRate', 'Tasa ilustrativa semanal'],
+  ]) {
+    const row = document.createElement('div');
+    const term = document.createElement('dt');
+    const value = document.createElement('dd');
+    term.textContent = label;
+    value.dataset.field = field;
+    row.append(term, value);
+    list.append(row);
+  }
+}
+
+function renderTermComparison(draft) {
+  if (!alternativeWeeks.options.length || alternativeWeeks.dataset.current !== String(draft.weeks)) {
+    const choices = terms.filter((weeks) => weeks !== draft.weeks);
+    const previous = Number(alternativeWeeks.value);
+    alternativeWeeks.replaceChildren(...choices.map((weeks) => new Option(`${weeks} semanas`, weeks)));
+    if (choices.includes(previous)) alternativeWeeks.value = String(previous);
+    alternativeWeeks.dataset.current = String(draft.weeks);
+  }
+  fillDetails('current-term', loanDetails(draft));
+  fillDetails('alternative-term', loanDetails({ ...draft, weeks: Number(alternativeWeeks.value) }));
+}
+
+byId('choose-alternative').addEventListener('click', () => {
+  draftForm.elements.weeks.value = alternativeWeeks.value;
+  draftForm.elements.weeks.dispatchEvent(new Event('change', { bubbles: true }));
+  termComparison.open = false;
+  draftForm.elements.weeks.focus();
+});
 
 profile.append(new Option(applicant.name, applicant.id));
 for (const { id, name } of supporters) profile.append(new Option(name, id));
@@ -717,7 +845,46 @@ function switchProfile(id, destination) {
   showProfile(true, destination);
 }
 
-profile.addEventListener('change', () => showProfile(false));
+profile.addEventListener('change', () => {
+  demoControls.open = false;
+  showProfile(true);
+});
+byId('home-application').addEventListener('click', () => switchProfile(applicant.id, 'application'));
+byId('home-support').addEventListener('click', () => switchProfile(guidedVoter, 'support'));
+
+const helpReasonSelect = byId('account-help-reason');
+helpReasonSelect.append(...helpReasons.map((reason) => new Option(reason, reason)));
+helpForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  if (!requestLoanHelp(state, profile.value, helpReasonSelect.value)) return;
+  saveState();
+  show('account');
+  announce('Solicitud de contacto simulado registrada.');
+});
+
+byId('review-payment').addEventListener('click', () => {
+  const account = getLoanAccount(state, profile.value);
+  if (!account?.next) return;
+  const { next, requestId, version } = account;
+  reviewedPayment = { requestId, version, number: next.number };
+  byId('payment-summary').textContent = `Cuota ${next.number} · ${money(next.amountCop)} · ${reminderDate.format(new Date(next.dueDate))}`;
+  paymentDialog.showModal();
+});
+
+paymentDialog.addEventListener('submit', (event) => {
+  event.preventDefault();
+  if (!paymentDialog.open) return;
+  const expected = reviewedPayment;
+  reviewedPayment = null;
+  paymentDialog.close();
+  if (event.submitter?.value !== 'confirm' || !payNextInstallment(state, profile.value, expected)) return;
+  saveState();
+  show('account');
+});
+
+paymentDialog.addEventListener('cancel', () => {
+  reviewedPayment = null;
+});
 
 installmentReminder.addEventListener('click', (event) => {
   const intention = event.target.dataset.intention;
@@ -727,9 +894,12 @@ installmentReminder.addEventListener('click', (event) => {
   renderReminderIntention(intention);
 });
 
-byId('choose-invited').addEventListener('click', () => profile.focus());
-byId('installment-profile').addEventListener('click', () => profile.focus());
-byId('project-profile').addEventListener('click', () => profile.focus());
+for (const id of ['choose-invited', 'installment-profile', 'project-profile']) {
+  byId(id).addEventListener('click', () => {
+    demoControls.open = true;
+    profile.focus();
+  });
+}
 projectForm.addEventListener('input', validateProjectDraft);
 projectForm.addEventListener('submit', (event) => {
   event.preventDefault();
@@ -756,10 +926,17 @@ byId('project-confirm').addEventListener('click', (event) => {
   show('project');
   announce(byId('project-status').textContent);
 });
-byId('start-demo').addEventListener('click', () => openJourney(true));
-byId('reset-demo').addEventListener('click', () => openJourney(true, true));
-byId('exit-demo').addEventListener('click', () => openJourney(false));
-byId('guided-vote').addEventListener('click', () => switchProfile(guidedVoter, 'sheet'));
+for (const [id, action] of [
+  ['start-demo', () => openJourney(true)],
+  ['reset-demo', () => openJourney(true, true)],
+  ['exit-demo', () => openJourney(false)],
+  ['guided-vote', () => switchProfile(guidedVoter, 'sheet')],
+]) {
+  byId(id).addEventListener('click', () => {
+    demoControls.open = false;
+    action();
+  });
+}
 byId('guided-return').addEventListener('click', () => switchProfile(applicant.id));
 byId('simulate-installment').addEventListener('click', () => {
   installmentVariant = 'reserve';
@@ -799,7 +976,11 @@ for (const button of document.querySelectorAll('[data-go]')) {
 
 byId('edit-draft').addEventListener('click', renderCostPreview);
 
-draftForm.addEventListener('change', () => {
+draftForm.addEventListener('change', (event) => {
+  if (event.target === alternativeWeeks) {
+    renderTermComparison(readDetails(new FormData(draftForm)));
+    return;
+  }
   byId('revision-error').hidden = true;
   if (editingVersion) saveNavigation();
   else saveDraft();
@@ -891,6 +1072,13 @@ inviteForm.addEventListener('submit', (event) => {
   announce(`Invitación enviada a ${name}. ${byId('progress').textContent}`);
 });
 
+byId('open-current-sheet').addEventListener('click', () => {
+  const currentNotice = getInbox(state, profile.value).find(({ isCurrent }) => isCurrent);
+  if (!currentNotice) return;
+  selectedVersion = currentNotice.version;
+  show('sheet');
+});
+
 responseForm.addEventListener('submit', (event) => {
   event.preventDefault();
   const response = event.submitter?.value;
@@ -918,4 +1106,4 @@ for (const label of document.querySelectorAll('[data-applicant-name]')) label.te
 renderScoreComparison();
 openJourney(guided, false, false);
 byId('startup-message').hidden = true;
-profile.closest('.demo-controls').hidden = false;
+demoControls.hidden = false;

@@ -14,7 +14,7 @@ Todas son P0 para la prueba de V2. Los identificadores V2-HU se usan en este bac
 
 ## V2-HU-02 · Entender y responder al respaldo
 
-**Como Luz**, quiero saber qué acepto y qué quedará por decidir. **Dependencias:** ninguna de V2. FR-22, FR-23, BE-02, FE-02, UX-02.
+**Como Luz**, quiero saber qué acepto y qué quedará por decidir. **Estado:** implementada y verificada localmente. **Dependencias:** ninguna de V2. FR-22, FR-23, BE-02, FE-02, UX-02.
 
 1. Con invitación pendiente, veo antes de actuar el aporte máximo, la condición que podría activarlo y el alcance de la aceptación en la demo.
 2. Si acepto, recibo confirmación y sé cuándo podré votar. Aceptar no suma un voto. Cuando la ficha está disponible, puedo abrir la versión que me corresponde.
@@ -23,7 +23,7 @@ Todas son P0 para la prueba de V2. Los identificadores V2-HU se usan en este bac
 
 ## V2-HU-03 · Saber cómo va mi solicitud
 
-**Como Diana**, quiero identificar el estado y saber quién debe actuar para entender si puedo seguir. **Dependencia:** V2-HU-02 para la trazabilidad de invitaciones. FR-23, BE-02, BE-03, FE-03, UX-03.
+**Como Diana**, quiero identificar el estado y saber quién debe actuar para entender si puedo seguir. **Estado:** implementada y verificada localmente. **Dependencia:** V2-HU-02 para la trazabilidad de invitaciones. FR-23, BE-02, BE-03, FE-03, UX-03.
 
 1. Con respaldos pendientes, el estado muestra el conteo y el paso para reunirlos. Con una ficha enviada, distingue votos pendientes, reunión y rechazo.
 2. Cuando la aprobación excede el límite o el saldo disponible, veo el motivo junto al estado de desembolso. El saldo conserva su valor.
@@ -32,7 +32,7 @@ Todas son P0 para la prueba de V2. Los identificadores V2-HU se usan en este bac
 
 ## V2-HU-04 · Consultar y pagar la próxima cuota
 
-**Como Diana**, quiero revisar la cuota antes de confirmarla y recuperar el comprobante. **Dependencia:** V2-HU-03 para el acceso desde seguimiento. FR-24, BE-04, FE-04, UX-03.
+**Como Diana**, quiero revisar la cuota antes de confirmarla y recuperar el comprobante. **Estado:** implementada y verificada localmente. **Dependencia:** V2-HU-03 para el acceso desde seguimiento. FR-24, BE-04, FE-04, UX-03.
 
 1. Con un crédito desembolsado veo importe, vencimiento, saldo pendiente y calendario de la versión registrada.
 2. Abrir y cancelar la revisión conserva el saldo. Confirmar descuenta una vez el importe de la cuota revisada, registra el comprobante y muestra el siguiente vencimiento o el crédito pagado.

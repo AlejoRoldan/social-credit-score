@@ -21,12 +21,14 @@ export const reasons = Object.freeze([
   'Comprar insumos para el negocio',
   'Reparar el equipo de trabajo',
   'Comprar herramientas de trabajo',
+  'Cubrir un gasto personal imprevisto',
+  'Reparar un electrodoméstico del hogar',
 ]);
 
 export const minimumSupporters = 5;
 export const contributionLimit = 10_000;
 const weeklyCostLimitPercent = 2;
-const firstInstallmentDueDate = '2026-11-23';
+export const firstInstallmentDueDate = '2026-11-23';
 const installmentIntentions = ['plan-to-pay', 'need-to-talk'];
 
 export function createDemoState() {

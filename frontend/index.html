@@ -11,18 +11,24 @@
 <body>
   <header class="site-header">
     <div class="shell">
-      <p class="brand">entrevecinos</p>
-      <div class="demo-controls" hidden>
-        <label for="profile">Cambiar perfil de prueba</label>
-        <select id="profile" aria-describedby="demo-note"></select>
-        <p id="demo-note">Demo con personas y montos ficticios.</p>
-        <div class="actions demo-switch">
-          <button type="button" id="start-demo">Iniciar demo</button>
-          <button type="button" id="guided-vote" hidden>Ir al voto de Luz</button>
-          <button type="button" id="reset-demo" class="secondary" hidden>Reiniciar demo</button>
-          <button type="button" id="exit-demo" class="secondary" hidden>Ir al recorrido normal</button>
-        </div>
+      <div class="masthead">
+        <p class="brand"><span class="brand-mark" aria-hidden="true">e</span>Entrevecinos</p>
+        <span class="demo-badge">Modo demo</span>
       </div>
+      <details class="demo-controls" hidden>
+        <summary>Controles de demo</summary>
+        <div class="demo-panel">
+          <label for="profile">Cambiar perfil de prueba</label>
+          <select id="profile" aria-describedby="demo-note"></select>
+          <p id="demo-note">Demo con personas y montos ficticios.</p>
+          <div class="actions demo-switch">
+            <button type="button" id="start-demo">Iniciar demo</button>
+            <button type="button" id="guided-vote" hidden>Ir al voto de Luz</button>
+            <button type="button" id="reset-demo" class="secondary" hidden>Reiniciar demo</button>
+            <button type="button" id="exit-demo" class="secondary" hidden>Ir al recorrido normal</button>
+          </div>
+        </div>
+      </details>
     </div>
   </header>
 
@@ -30,7 +36,9 @@
     <p id="announcement" class="sr-only" role="status"></p>
     <p id="startup-message" class="callout callout-attention">Si la demo no carga, activa JavaScript y ejecuta <code>node serve.mjs</code> desde la carpeta del proyecto. Luego abre <a href="http://127.0.0.1:8000/">la demo en el servidor local</a>.</p>
     <nav id="navigation" aria-label="Vistas del perfil" hidden>
+      <button type="button" class="secondary" data-go="home">Inicio</button>
       <button type="button" class="secondary" data-go="application">Mi solicitud</button>
+      <button type="button" class="secondary" data-go="account" hidden>Mi crédito</button>
       <button type="button" class="secondary" data-go="support">Mi respaldo</button>
       <button type="button" class="secondary" data-go="inbox">Bandeja</button>
       <button type="button" class="secondary" data-go="score">Mi puntaje</button>
@@ -39,27 +47,52 @@
       <button type="button" class="secondary" data-go="installment">Cuota pendiente</button>
     </nav>
 
+    <section class="card home-card" id="home" aria-labelledby="home-title" hidden>
+      <div class="home-content">
+        <p class="eyebrow">Crédito con respaldo de tu círculo</p>
+        <h1 id="home-title" tabindex="-1">Un préstamo pequeño para lo que sigue</h1>
+        <p>Explora cómo financiar un gasto personal o darle impulso a tu negocio. Revisa las cuotas y el total antes de compartir tu solicitud.</p>
+        <div class="actions">
+          <button type="button" id="home-application">Simular un préstamo</button>
+          <button type="button" class="secondary" id="home-support">Tengo una invitación</button>
+        </div>
+      </div>
+      <div class="home-example">
+        <p class="eyebrow">Ejemplo a 5 semanas</p>
+        <p class="home-example-amount">$300.000 <span>COP</span></p>
+        <dl>
+          <div><dt>Cuota semanal</dt><dd>$66.000 COP</dd></div>
+          <div><dt>Total a pagar</dt><dd>$330.000 COP</dd></div>
+        </dl>
+      </div>
+    </section>
+
     <section class="card" id="needs" aria-labelledby="needs-title" hidden>
       <p class="eyebrow" id="needs-step">Paso 1 de 3</p>
       <h1 id="needs-title" tabindex="-1">Cuéntanos qué necesitas</h1>
       <p id="needs-description">Elige las opciones para la solicitud de <span data-applicant-name></span>.</p>
       <form id="draft-form">
-        <label for="amount">¿Cuánto necesitas en pesos (COP)?</label>
-        <select id="amount" name="amount" required></select>
-        <fieldset id="reasons">
-          <legend>¿Para qué lo necesitas?</legend>
-        </fieldset>
-        <label for="weeks">¿En cuántas semanas pagarías?</label>
-        <select id="weeks" name="weeks" required></select>
-        <p>Harías un pago cada semana.</p>
-        <fieldset id="revision-electorate" aria-describedby="electorate-hint" hidden>
-          <legend>Personas habilitadas para votar</legend>
-          <p id="electorate-hint">Elige al menos cinco personas que confirmaron su respaldo.</p>
-          <div id="revision-choices"></div>
-        </fieldset>
+        <div class="simulator-inputs">
+          <label for="amount">¿Cuánto necesitas en pesos (COP)?</label>
+          <select id="amount" name="amount" required></select>
+          <label for="weeks">¿En cuántas semanas pagarías?</label>
+          <select id="weeks" name="weeks" required></select>
+          <p>Harías un pago cada semana.</p>
+          <fieldset id="reasons">
+            <legend>¿Para qué lo necesitas?</legend>
+          </fieldset>
+          <fieldset id="revision-electorate" aria-describedby="electorate-hint" hidden>
+            <legend>Personas habilitadas para votar</legend>
+            <p id="electorate-hint">Elige al menos cinco personas que confirmaron su respaldo.</p>
+            <div id="revision-choices"></div>
+          </fieldset>
+        </div>
         <div id="revision-preview" aria-live="polite" aria-atomic="true" hidden>
+          <h2>Resumen de la simulación</h2>
           <dl class="facts">
+            <div><dt>Monto que recibirías</dt><dd data-field="amount"></dd></div>
             <div><dt>Valor de cada cuota semanal</dt><dd data-field="installment"></dd></div>
+            <div><dt>Primer vencimiento de ejemplo</dt><dd data-field="firstDue"></dd></div>
             <div><dt>Intereses de ejemplo</dt><dd data-field="interest"></dd></div>
             <div><dt>Tasa ilustrativa prorrateada por semana</dt><dd data-field="weeklyRate"></dd></div>
             <div><dt>Total que pagarías</dt><dd data-field="total"></dd></div>
@@ -67,6 +100,24 @@
           <p class="callout callout-attention" data-cost-warning hidden></p>
           <p>La tasa y el límite son ejemplos de esta simulación. No constituyen una oferta de crédito.</p>
         </div>
+        <details id="term-comparison">
+          <summary>Comparar dos plazos</summary>
+          <label for="alternative-weeks">Plazo alternativo para el mismo monto</label>
+          <select id="alternative-weeks"></select>
+          <div class="term-options" aria-live="polite">
+            <div class="callout" id="current-term">
+              <h3>Plazo elegido · <span data-field="weeks"></span></h3>
+              <dl class="facts" data-term-facts></dl>
+              <p data-cost-warning hidden></p>
+            </div>
+            <div class="callout" id="alternative-term">
+              <h3>Plazo alternativo · <span data-field="weeks"></span></h3>
+              <dl class="facts" data-term-facts></dl>
+              <p data-cost-warning hidden></p>
+            </div>
+          </div>
+          <button type="button" class="secondary" id="choose-alternative">Usar el plazo alternativo</button>
+        </details>
         <p id="revision-error" role="alert" hidden></p>
         <div class="actions">
           <button type="button" class="secondary" id="cancel-revision" data-go="success" hidden>Volver al estado</button>
@@ -80,6 +131,7 @@
       <h1 id="circle-title" tabindex="-1">Reúne tu grupo</h1>
       <p>Necesitas al menos cinco personas que acepten respaldarte.</p>
       <p class="callout" id="progress"></p>
+      <p id="support-next">Puedes pedir respuesta a las personas invitadas o invitar a otra persona. Cuando reúnas cinco respaldos, podrás revisar la solicitud.</p>
       <div id="pending-hint" class="actions">
         <p>En la demo puedes responder desde el perfil de una persona invitada.</p>
         <button type="button" id="choose-invited" class="secondary">Ir al selector de perfiles</button>
@@ -126,7 +178,12 @@
 
     <section class="card" id="success" aria-labelledby="success-title" hidden>
       <p class="eyebrow">Solicitud de prueba</p>
-      <h1 id="success-title" tabindex="-1">Solicitud enviada al grupo</h1>
+      <h1 id="success-title" tabindex="-1">Seguimiento de mi solicitud</h1>
+      <ol class="application-steps" aria-label="Seguimiento de la solicitud">
+        <li>Solicitud enviada</li>
+        <li id="step-approval">Decisión del círculo</li>
+        <li id="step-disbursement">Desembolso</li>
+      </ol>
       <div class="callout decision-status">
         <p>Decisión del grupo</p>
         <p id="applicant-version"></p>
@@ -138,12 +195,15 @@
         <p>Desembolso simulado</p>
         <strong id="applicant-disbursement"></strong>
         <p id="applicant-disbursement-amount" hidden></p>
+        <p id="applicant-disbursement-next" hidden></p>
         <p id="applicant-cost"></p>
       </div>
+      <div class="actions">
+        <button type="button" id="open-account" data-go="account" hidden>Ver mi crédito</button>
+        <button type="button" id="simulate-installment" class="secondary" hidden>Ver ejercicio de impago</button>
+        <button type="button" id="edit-revision" class="secondary">Preparar una nueva versión</button>
+      </div>
       <div id="installment-reminder"></div>
-      <p id="application-profile-hint">Para ver cómo les llegó, cambia al perfil de prueba de una persona que confirmó.</p>
-      <button type="button" id="simulate-installment" hidden>Simular la siguiente cuota</button>
-      <button type="button" id="edit-revision" class="secondary">Preparar una nueva versión</button>
     </section>
 
     <template id="installment-reminder-template">
@@ -162,8 +222,42 @@
       </div>
     </template>
 
+    <section class="card" id="account" aria-labelledby="account-title" hidden>
+      <p class="eyebrow">Crédito simulado</p>
+      <h1 id="account-title" tabindex="-1">Mi crédito</h1>
+      <div class="account-overview">
+        <div class="callout total account-next">
+          <p id="account-next-label">Próxima cuota</p>
+          <strong id="account-next-amount"></strong>
+          <p id="account-next-date"></p>
+          <button type="button" id="review-payment">Simular pago</button>
+        </div>
+        <div class="callout">
+          <p>Saldo pendiente</p>
+          <strong class="account-balance" id="account-balance"></strong>
+          <label for="payment-progress" id="payment-progress-label"></label>
+          <progress id="payment-progress"></progress>
+        </div>
+      </div>
+      <p class="callout" id="payment-receipt" role="status" hidden></p>
+      <details class="account-calendar">
+        <summary>Calendario y comprobantes</summary>
+        <ul class="member-list" id="account-installments" aria-label="Calendario de cuotas"></ul>
+      </details>
+      <div id="account-help" class="callout">
+        <h2>Ayuda privada</h2>
+        <p id="account-help-status" role="status" hidden></p>
+        <form id="account-help-form">
+          <label for="account-help-reason">¿Qué necesitas conversar?</label>
+          <select id="account-help-reason" required><option value="">Elige un motivo</option></select>
+          <button type="submit" class="secondary">Solicitar contacto simulado</button>
+        </form>
+      </div>
+    </section>
+
     <section class="card" id="installment" aria-labelledby="installment-title" hidden>
       <h1 id="installment-title" tabindex="-1">Cuota pendiente</h1>
+      <p>Ejercicio de impago con datos de ejemplo.</p>
       <p id="installment-denied" hidden>Este perfil no tiene acceso al ejemplo de la cuota. Elige a <span data-applicant-name></span> o a una persona que confirmó su respaldo.</p>
       <div class="installment-content" id="installment-content">
         <p>El importe de esta cuota pertenece a un ejemplo ficticio independiente del préstamo anterior.</p>
@@ -281,13 +375,15 @@
       <h1 id="support-title" tabindex="-1">Mi respaldo</h1>
       <p>Tu estado: <strong data-support-status></strong></p>
       <div id="commitment" class="callout">
-        <p>Si <span data-applicant-name></span> no puede pagar, tu aporte sería de hasta <strong data-limit></strong>.</p>
+        <p>Tu aporte máximo simulado es de <strong data-limit></strong>. Podría corresponderte si <span data-applicant-name></span> deja una cuota sin pagar.</p>
+        <p>Aceptar confirma tu respaldo en la demo. Podrás votar por separado cuando recibas la ficha. La demo no cobra dinero.</p>
       </div>
       <p id="support-explanation"></p>
       <form id="response-form" class="actions" hidden>
         <button type="submit" name="response" value="confirmed">Aceptar respaldo</button>
-        <button type="submit" name="response" value="declined" class="secondary">No aceptar</button>
+        <button type="submit" name="response" value="declined" class="secondary">Rechazar respaldo</button>
       </form>
+      <button type="button" id="open-current-sheet" hidden>Abrir ficha vigente</button>
     </section>
 
     <section class="card" id="inbox" aria-labelledby="inbox-title" hidden>
@@ -306,6 +402,7 @@
         <strong id="sheet-status"></strong>
         <p id="sheet-votes"></p>
         <p id="sheet-decision"></p>
+        <p id="sheet-history-restriction" hidden>Esta versión fue sustituida. Puedes consultarla en el historial. La votación de esta versión está cerrada.</p>
       </div>
       <p id="applicant-summary"></p>
       <p id="applicant-history"></p>
@@ -341,5 +438,16 @@
       <button type="button" class="secondary" data-go="inbox">Volver a la bandeja</button>
     </section>
   </main>
+  <dialog id="payment-dialog" aria-labelledby="payment-title" aria-describedby="payment-summary">
+    <form method="dialog">
+      <h2 id="payment-title">Revisa el pago simulado</h2>
+      <p id="payment-summary"></p>
+      <p>El pago se registra en tu historial de prueba.</p>
+      <div class="actions">
+        <button class="secondary" value="cancel" autofocus>Cancelar</button>
+        <button value="confirm">Confirmar pago simulado</button>
+      </div>
+    </form>
+  </dialog>
 </body>
 </html>

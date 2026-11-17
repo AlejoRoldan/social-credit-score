@@ -4,26 +4,55 @@ body { margin: 0; overflow-wrap: anywhere; }
 p, ul, dl { margin: 0; }
 
 .shell {
-  width: min(100% - 2 * var(--space-6), 38rem);
+  width: min(100% - 2 * var(--space-4), 68rem);
   margin-inline: auto;
 }
 
-.site-header { padding-block-start: var(--space-6); }
+.site-header { padding-block: var(--space-4); border-bottom: 1px solid var(--line); background: var(--surface); }
+.site-header .shell { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.masthead, .brand { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
 
 .brand {
   color: var(--brand);
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 750;
   line-height: 1.4;
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border-radius: .7rem;
+  color: var(--surface);
+  background: var(--brand);
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 1.6rem;
+}
+.demo-badge {
+  border-radius: 2rem;
+  padding: var(--space-1) var(--space-2);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: .75rem;
+  font-weight: 700;
 }
 
 .demo-controls {
+  position: relative;
+}
+.demo-controls summary { cursor: pointer; color: var(--brand); font-weight: 650; padding: var(--space-2); }
+.demo-panel {
   display: grid;
   gap: var(--space-2);
-  margin-top: var(--space-4);
+  max-inline-size: min(24rem, 90vw);
+  margin-top: var(--space-2);
   padding: var(--space-4);
+  border: 1px solid var(--line);
   border-radius: var(--radius-medium);
-  background: var(--soft);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
 }
 
 .demo-controls p, form p { color: var(--muted); }
@@ -34,9 +63,64 @@ main { padding-block: var(--space-6) var(--space-8); }
   display: grid;
   gap: var(--space-4);
   padding: var(--space-4);
+  border: 1px solid var(--line);
   border-radius: var(--radius-large);
   background: var(--surface);
+  box-shadow: var(--shadow-card);
 }
+
+.home-card {
+  gap: var(--space-6);
+  padding: clamp(1.25rem, 4vw, 3.25rem);
+  color: var(--surface);
+  background: radial-gradient(ellipse at top right, #326c56, var(--deep) 66%);
+  border-color: var(--deep);
+}
+.home-content { display: grid; align-content: center; gap: var(--space-4); min-width: 0; }
+.home-content .eyebrow { color: #d1ebda; }
+.home-content h1 { font-size: clamp(1.9rem, 5vw, 3.75rem); line-height: 1.05; letter-spacing: -.045em; max-inline-size: 13ch; }
+.home-content > p:not(.eyebrow) { max-inline-size: 47ch; color: #e3f0e7; }
+.home-content button:first-child { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+.home-content button.secondary { color: var(--surface); background: transparent; border-color: #b3d7c1; }
+.home-card :focus-visible, .home-card h1:focus { outline-color: var(--accent); }
+.home-example {
+  align-self: center;
+  min-width: 0;
+  display: grid;
+  gap: var(--space-3);
+  padding: clamp(1rem, 3vw, 2rem);
+  border-radius: var(--radius-large);
+  background: var(--surface);
+  color: var(--ink);
+}
+.home-example-amount { font-size: clamp(1.6rem, 4vw, 2.75rem); font-weight: 750; line-height: 1.15; }
+.home-example-amount span { font-size: .9rem; color: var(--muted); }
+.home-example dl div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2); padding-block: var(--space-2); border-top: 1px solid var(--line); }
+.home-example dd { margin: 0; font-weight: 700; }
+
+.simulator-inputs { display: grid; gap: var(--space-3); min-width: 0; }
+#term-comparison { grid-column: 1 / -1; min-width: 0; border: 1px solid var(--line); border-radius: var(--radius-medium); padding: var(--space-4); }
+#term-comparison summary { cursor: pointer; font-weight: 700; min-height: 2rem; }
+#term-comparison select, .term-options, #choose-alternative { margin-top: var(--space-3); }
+.term-options { display: grid; gap: var(--space-3); }
+.term-options h3 { margin: 0; }
+.term-options [data-cost-warning] { color: var(--danger); }
+@media (min-width: 48rem) {
+  .term-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+#revision-preview { display: grid; gap: var(--space-3); align-content: start; min-width: 0; padding: var(--space-4); border-radius: var(--radius-medium); background: var(--soft); }
+.application-steps { display: grid; gap: var(--space-2); padding-inline-start: var(--space-6); margin: 0; }
+.application-steps [aria-current="step"] { color: var(--brand); font-weight: 750; }
+.account-overview { display: grid; gap: var(--space-3); }
+.account-next { background: var(--deep); color: var(--surface); }
+.account-next button { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+.account-next button:focus-visible { outline-color: var(--accent); }
+.account-balance { font-size: clamp(1.5rem, 4vw, 2.4rem); font-variant-numeric: tabular-nums; }
+progress { accent-color: var(--brand); inline-size: 100%; }
+.account-calendar { border: 1px solid var(--line); border-radius: var(--radius-medium); padding-inline: var(--space-4); }
+.account-calendar summary { cursor: pointer; font-weight: 700; padding-block: var(--space-4); }
+#payment-dialog { width: min(100% - 2rem, 30rem); max-height: calc(100% - 2rem); border: 1px solid var(--line); border-radius: var(--radius-large); color: var(--ink); padding: var(--space-6); }
+#payment-dialog::backdrop { background: rgb(10 31 25 / 60%); }
 
 .eyebrow, label, legend, dt {
   font-size: .875rem;
@@ -48,6 +132,8 @@ main { padding-block: var(--space-6) var(--space-8); }
 
 h1 {
   margin: 0;
+  inline-size: fit-content;
+  max-inline-size: 100%;
   font-size: 1.75rem;
   line-height: 2.125rem;
   font-weight: 600;
@@ -62,6 +148,7 @@ h2 {
 
 form, nav, .actions { display: grid; gap: var(--space-3); }
 nav { margin-bottom: var(--space-6); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#navigation button { min-block-size: 2.75rem; padding: var(--space-2) var(--space-3); font-size: .9rem; border-color: var(--line); }
 
 fieldset {
   display: grid;
@@ -195,4 +282,12 @@ button:disabled { background: var(--line); color: var(--muted); border-color: va
   .card { padding: var(--space-6); }
   nav, .actions { display: flex; flex-wrap: wrap; }
   .actions select { flex: 1 1 10rem; width: auto; }
+}
+
+@media (min-width: 48rem) {
+  .demo-panel { position: absolute; inset-inline-end: 0; z-index: 2; inline-size: 21rem; }
+  .home-card { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); padding: clamp(1.25rem, 4vw, 3.25rem); }
+  #draft-form, .account-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  #draft-form > .actions, #revision-error { grid-column: 1 / -1; }
+  .application-steps { grid-template-columns: repeat(3, 1fr); gap: var(--space-6); }
 }
