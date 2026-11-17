@@ -2,9 +2,14 @@
 
 - [Guía por historia de usuario](guia-demo.md)
 - [Benchmark de crédito comunitario y microcrédito](research/credit-community-benchmark.md)
+- [Benchmark fintech para V2](research/benchmark-fintech-v2.md)
 - [Implicaciones para Entrevecinos](research/implicaciones-benchmark.md)
 
 ## Planificación y alcance
+
+- [PRD de Entrevecinos V2](../../_bmad-output/initiative-credito-comunitario/prd-entrevecinos-v2/prd-entrevecinos-v2.md) con arquetipos, recorridos, requisitos por nivel y criterios de validación.
+- [RFC de Entrevecinos V2](../technical/rfc-entrevecinos-v2.md) con decisiones técnicas y secuencia de entrega.
+- [Historias de usuario de V2](hu-entrevecinos-v2.md) con dependencias y criterios de aceptación.
 
 - [Traspaso del prototipo](../technical/traspaso-prototipo.md) con decisiones, planes por historia, pruebas y orden de revisión de los PRs.
 - [PRD v0.5](../../_bmad-output/initiative-credito-comunitario/prd-inclusion-financiera/prd-inclusion-financiera.md) con el alcance, las decisiones confirmadas y las preguntas abiertas.
