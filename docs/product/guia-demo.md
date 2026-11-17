@@ -1,11 +1,20 @@
 # Guía de la demo de Entrevecinos
 
+## Del simulador al primer pago
+
+1. En Inicio, elige **Simular un préstamo**. Prueba una finalidad personal y otra de negocio. Cambia el importe y el plazo para ver cómo se actualizan la cuota, el costo, el total y el primer vencimiento de ejemplo.
+2. Continúa al grupo y envía la solicitud con cinco respaldos confirmados. Para mostrar solo el tramo final, abre **Controles de demo → Iniciar demo** y emite el último voto como Luz.
+3. Vuelve a Diana y abre **Mi crédito**. En el ejemplo guiado de $300.000 COP a cinco semanas, el saldo inicial es $330.000 COP. Confirma el pago simulado de $66.000 COP para consultar el comprobante y el nuevo saldo de $264.000 COP.
+4. Abre **Calendario y comprobantes** y revisa la siguiente fecha. Vuelve a **Mi solicitud** y elige **Necesito conversar** en el recordatorio. Comprueba que el foco llega a **Ayuda privada**, elige un motivo y confirma la solicitud simulada. Al recargar, puedes volver a consultar el estado desde el recordatorio. Cambia a Luz para comprobar que el motivo y el detalle están reservados a Diana.
+
+El calendario usa las condiciones de la versión desembolsada. El escenario de **Cuota pendiente** sigue mostrando el ejercicio independiente de reserva y aportes. El diseño del simulador y de la cuenta toma como referencia los recorridos públicos de Nu y Nequi. [Simulador de Nu](https://blog.nu.com.co/prestamo-nu-solucion-financiera-a-tu-medida/) · [Consulta de cuotas en Nequi](https://ayuda.nequi.com.co/hc/es/articles/38109505343885--Como-ver-las-cuotas-de-mi-cr%C3%A9dito-Nequi)
+
 [Arranque y pruebas automatizadas](../../README.md#arranque-local). Todas las operaciones y perfiles de esta guía son ficticios.
 
 ## Probar la HU 1.1
 
 1. Como Diana, elige monto, razón y plazo y continúa. Comprueba que cuatro personas confirmaron, Luz tiene una invitación pendiente y «Revisar solicitud» está desactivado.
-2. En «Cambiar perfil de prueba», elige Luz. Lee el tope de $10.000 COP y el caso en que tendría que aportar. Para probar el rechazo, elige «No aceptar», vuelve a Diana y comprueba que el contador sigue en cuatro. Invita a Mateo desde el grupo y cambia a su perfil para aceptar. En el recorrido directo, acepta como Luz.
+2. En «Cambiar perfil de prueba», elige Luz. Lee el tope simulado de $10.000 COP y cuándo podría aplicarse. Para probar el rechazo, elige «Rechazar respaldo», comprueba la confirmación y vuelve a Diana para verificar que aún falta un respaldo. Invita a Mateo desde el grupo y cambia a su perfil para aceptar. En el recorrido directo, acepta como Luz y comprueba que la confirmación explica cuándo podrá votar.
 3. Vuelve a Diana y abre «Revisa y envía». Comprueba monto, razón, plazo, frecuencia, cuota, intereses de ejemplo y total. Entra a «Corregir datos», comprueba que se mantienen las opciones anteriores, ajusta una y revisa nuevamente antes de enviar.
 4. Envía la solicitud. Cambia a Ana y abre el único aviso de su bandeja. Comprueba el resumen de Diana, la ausencia de historial, las condiciones enviadas y el tope propio. Cambia a un perfil sin confirmar y comprueba su estado y la bandeja vacía. Para probar el caso pendiente, deja una invitación adicional sin responder antes de enviar.
 5. Repite el recorrido a 320 px de ancho, con teclado o tacto, y al 200 % de tamaño de texto. Comprueba el foco visible, los estados escritos y que el contenido cabe en el ancho disponible.
@@ -46,7 +55,7 @@ La regla ficticia de la demo divide los intereses totales de la ficha entre el p
 ### Recorrido guiado con reserva
 
 1. Selecciona «Iniciar demo». La ficha de Luz se abre con cuatro votos favorables. Emite el último voto para registrar el desembolso y usa «Volver al perfil de Diana».
-2. Como Diana, elige «Simular la siguiente cuota». La cuota vencida de $100.000 COP es un ejemplo independiente. Diana ya pagó $40.000 COP y quedan $60.000 COP pendientes mientras el grupo vota sobre la reserva.
+2. Como Diana, elige «Ver ejercicio de impago». La cuota vencida de $100.000 COP es un ejemplo independiente. Diana ya pagó $40.000 COP y quedan $60.000 COP pendientes mientras el grupo vota sobre la reserva.
 3. Cambia a Ana, Camilo, Elena, José y Luz para votar a favor de usar $25.000 COP. La vista de Diana ofrece un acceso al siguiente perfil. Recarga después del cuarto voto y comprueba que se conservan el perfil, el ejemplo y los cuatro votos, con saldo de $120.000 COP y reserva de $40.000 COP. Después del quinto voto, el saldo baja a $95.000 COP y la reserva a $15.000 COP. El disponible sigue en $60.000 COP.
 4. En cada perfil de respaldo, comprueba que aparece solo su aporte de $7.000 COP. Simula un pago como Ana, Camilo, Elena y José, y un aporte fallido como Luz. Vuelve a Diana y comprueba los $28.000 COP realizados por el grupo, los $7.000 COP pendientes y las cinco asignaciones originales. Recarga para comprobar que persisten el fallo y los saldos.
 5. Para probar otro desenlace, reinicia y vota en contra en la cuota. El caso queda pendiente de resolución con $60.000 COP por cubrir y la bolsa conserva sus saldos iniciales.
@@ -90,4 +99,4 @@ Los puntajes son ejemplos precargados. Las decisiones de crédito, impago y giro
 2. En «Mi solicitud», comprueba que «Próxima cuota» muestra el vencimiento ficticio del 23 de noviembre de 2026 y $66.000 COP semanales para la ficha guiada. Elige «Planeo pagar», recarga y comprueba que se conserva la elección y su siguiente paso. Pulsa la misma opción y luego «Necesito conversar» para verificar que puedes cambiar de elección.
 3. Cambia a Ana y abre su ficha. Comprueba que conserva su aporte máximo y que el recordatorio, la elección y el siguiente paso desaparecen de la vista. Vuelve a Diana y comprueba que se recupera la elección.
 4. Abre «Ir al recorrido normal», completa el recorrido de la [HU 1.3](#probar-la-hu-13-con-el-mismo-monto-a-4-y-8-semanas) y guarda una elección distinta. Comprueba que el recordatorio usa los $41.250 COP de la versión de 8 semanas. Continúa y reinicia la demo guiada, vuelve a emitir el último voto y abre «Mi solicitud». El recordatorio guiado vuelve sin elección. Al regresar al recorrido normal se conserva su elección.
-5. Repite a 320 px en Chromium con Tab, Enter y tacto emulado. Comprueba el foco visible, la selección de las dos opciones y el siguiente paso. En el recorrido guiado, «Simular la siguiente cuota» abre el ejemplo independiente de la HU 2.2.
+5. Repite a 320 px en Chromium con Tab, Enter y tacto emulado. Comprueba el foco visible, la selección de las dos opciones y el siguiente paso. En el recorrido guiado, «Ver ejercicio de impago» abre el ejemplo independiente de la HU 2.2.

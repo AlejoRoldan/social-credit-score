@@ -10,7 +10,7 @@ Desde esta carpeta, con Node.js 22 o posterior:
 node serve.mjs
 ```
 
-Abre [Entrevecinos](http://127.0.0.1:8000/). **Mi solicitud** abre el recorrido completo. **Iniciar demo** sitúa el recorrido guiado en el último voto. Para elegir otro puerto, ejecuta `node serve.mjs 8001` y abre la dirección impresa en la terminal.
+Abre [Entrevecinos](http://127.0.0.1:8000/). **Simular un préstamo** abre el recorrido completo. En **Controles de demo**, elige **Iniciar demo** para saltar al último voto. Tras el desembolso, **Mi crédito** muestra las cuotas, los comprobantes y la ayuda privada. Para elegir otro puerto, ejecuta `node serve.mjs 8001` y abre la dirección impresa en la terminal.
 
 ## Estructura
 
