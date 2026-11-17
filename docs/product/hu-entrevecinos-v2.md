@@ -48,7 +48,7 @@ Todas son P0 para la prueba de V2. Los identificadores V2-HU se usan en este bac
 
 ## V2-HU-06 · Ejecutar y registrar la prueba exploratoria
 
-**Como facilitadora**, quiero ejecutar escenarios repetibles y documentar dónde se atasca cada rol. **Dependencias:** V2-HU-01 a V2-HU-05. FR-26, BE-06, FE-05, UX-04.
+**Como facilitadora**, quiero ejecutar escenarios repetibles y documentar dónde se atasca cada rol. **Estado:** regresión verificada localmente y guion listo para aplicar. **Dependencias:** V2-HU-01 a V2-HU-05. FR-26, BE-06, FE-05, UX-04. [Guion y fichas de registro](research/protocolo-exploratorio-v2.md)
 
 1. Puedo iniciar el recorrido guiado con datos ficticios y reiniciarlo conservando el avance normal. La recuperación de una sesión dañada muestra un paso disponible.
 2. La regresión cubre los dos roles, costo bloqueado, privacidad, pagos, recarga y la separación de sesiones. En 320 px y con texto al 200 % se puede completar el flujo con teclado.

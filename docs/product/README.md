@@ -4,6 +4,7 @@
 - [Benchmark de crédito comunitario y microcrédito](research/credit-community-benchmark.md)
 - [Benchmark fintech para V2](research/benchmark-fintech-v2.md)
 - [Implicaciones para Entrevecinos](research/implicaciones-benchmark.md)
+- [Protocolo exploratorio de Entrevecinos V2](research/protocolo-exploratorio-v2.md)
 
 ## Planificación y alcance
 
