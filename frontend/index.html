@@ -219,6 +219,7 @@
           <button type="button" class="secondary" data-intention="need-to-talk" aria-pressed="false">Necesito conversar</button>
         </div>
         <p data-reminder-next-step role="status"></p>
+        <p data-reminder-help-status hidden>Ya registraste una solicitud de ayuda simulada. Puedes volver a consultarla en Ayuda privada.</p>
       </div>
     </template>
 
@@ -245,12 +246,12 @@
         <ul class="member-list" id="account-installments" aria-label="Calendario de cuotas"></ul>
       </details>
       <div id="account-help" class="callout">
-        <h2>Ayuda privada</h2>
+        <h2 id="account-help-title" tabindex="-1">Ayuda privada</h2>
         <p id="account-help-status" role="status" hidden></p>
         <form id="account-help-form">
           <label for="account-help-reason">¿Qué necesitas conversar?</label>
           <select id="account-help-reason" required><option value="">Elige un motivo</option></select>
-          <button type="submit" class="secondary">Solicitar contacto simulado</button>
+          <button type="submit" class="secondary">Confirmar solicitud simulada</button>
         </form>
       </div>
     </section>

@@ -249,15 +249,17 @@ function renderReminderIntention(intention) {
   installmentReminder.querySelector('[data-reminder-next-step]').textContent = reminderNextSteps[intention] ?? '';
 }
 
-function renderInstallmentReminder(reminder, next) {
+function renderInstallmentReminder(reminder, account) {
   installmentReminder.replaceChildren();
-  if (!reminder || !next) return;
+  if (!reminder || !account?.next) return;
 
+  const { next, helpReason } = account;
   const content = byId('installment-reminder-template').content.cloneNode(true);
   const time = content.querySelector('time');
   time.dateTime = next.dueDate;
   time.textContent = reminderDate.format(new Date(next.dueDate));
   content.querySelector('[data-reminder-amount]').textContent = money(next.amountCop);
+  content.querySelector('[data-reminder-help-status]').hidden = !helpReason;
   installmentReminder.append(content);
   renderReminderIntention(reminder.intention);
 }
@@ -725,7 +727,7 @@ function show(requestedView, moveFocus = true) {
     byId('payment-progress').value = 0;
     helpForm.reset();
   }
-  renderInstallmentReminder(view === 'success' ? getInstallmentReminder(state, profile.value) : null, account?.next);
+  renderInstallmentReminder(view === 'success' ? getInstallmentReminder(state, profile.value) : null, account);
   navigation.hidden = false;
   byId('guided-vote').hidden = installmentAllowed || (profile.value === guidedVoter && view === 'sheet');
   const navView = view === 'project' && financeAllowed ? 'finance'
@@ -857,8 +859,10 @@ helpReasonSelect.append(...helpReasons.map((reason) => new Option(reason, reason
 helpForm.addEventListener('submit', (event) => {
   event.preventDefault();
   if (!requestLoanHelp(state, profile.value, helpReasonSelect.value)) return;
+  helpForm.reset();
   saveState();
-  show('account');
+  show('account', false);
+  byId('account-help-title').focus();
   announce('Solicitud de contacto simulado registrada.');
 });
 
@@ -891,6 +895,11 @@ installmentReminder.addEventListener('click', (event) => {
   if (!recordInstallmentIntention(state, profile.value, intention)) return;
 
   saveState();
+  if (intention === 'need-to-talk') {
+    show('account', false);
+    byId('account-help-title').focus();
+    return;
+  }
   renderReminderIntention(intention);
 });
 

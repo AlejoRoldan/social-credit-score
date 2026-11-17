@@ -40,7 +40,7 @@ Todas son P0 para la prueba de V2. Los identificadores V2-HU se usan en este bac
 
 ## V2-HU-05 · Llegar a ayuda privada desde el recordatorio
 
-**Como Diana**, quiero pedir ayuda desde el recordatorio y poder revisar lo que registré. **Dependencia:** V2-HU-03. FR-25, BE-05, FE-04, UX-03.
+**Como Diana**, quiero pedir ayuda desde el recordatorio y poder revisar lo que registré. **Estado:** implementada y verificada localmente. **Dependencia:** V2-HU-03. FR-25, BE-05, FE-04, UX-03.
 
 1. Al elegir **Necesito conversar**, se abre la sección Ayuda privada y el foco llega a su encabezado o primer campo.
 2. Abrir o abandonar ayuda conserva el estado sin registrar un envío. Al confirmar un motivo válido, veo que quedó registrada una solicitud simulada.

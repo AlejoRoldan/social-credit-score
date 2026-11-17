@@ -5,7 +5,7 @@
 1. En Inicio, elige **Simular un préstamo**. Prueba una finalidad personal y otra de negocio. Cambia el importe y el plazo para ver cómo se actualizan la cuota, el costo, el total y el primer vencimiento de ejemplo.
 2. Continúa al grupo y envía la solicitud con cinco respaldos confirmados. Para mostrar solo el tramo final, abre **Controles de demo → Iniciar demo** y emite el último voto como Luz.
 3. Vuelve a Diana y abre **Mi crédito**. En el ejemplo guiado de $300.000 COP a cinco semanas, el saldo inicial es $330.000 COP. Confirma el pago simulado de $66.000 COP para consultar el comprobante y el nuevo saldo de $264.000 COP.
-4. Abre **Calendario y comprobantes** y revisa la siguiente fecha. Registra una solicitud de contacto simulado en **Ayuda privada**. Recarga y cambia a Ana para comprobar que el pago y el motivo se conservan en la cuenta de Diana.
+4. Abre **Calendario y comprobantes** y revisa la siguiente fecha. Vuelve a **Mi solicitud** y elige **Necesito conversar** en el recordatorio. Comprueba que el foco llega a **Ayuda privada**, elige un motivo y confirma la solicitud simulada. Al recargar, puedes volver a consultar el estado desde el recordatorio. Cambia a Luz para comprobar que el motivo y el detalle están reservados a Diana.
 
 El calendario usa las condiciones de la versión desembolsada. El escenario de **Cuota pendiente** sigue mostrando el ejercicio independiente de reserva y aportes. El diseño del simulador y de la cuenta toma como referencia los recorridos públicos de Nu y Nequi. [Simulador de Nu](https://blog.nu.com.co/prestamo-nu-solucion-financiera-a-tu-medida/) · [Consulta de cuotas en Nequi](https://ayuda.nequi.com.co/hc/es/articles/38109505343885--Como-ver-las-cuotas-de-mi-cr%C3%A9dito-Nequi)
 
