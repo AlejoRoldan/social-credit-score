@@ -70,6 +70,18 @@ async function approveGuided(page) {
   await page.text('#applicant-disbursement', /Desembolso simulado registrado/);
 }
 
+async function tabTo(page, selector) {
+  for (let step = 0; step < 32; step++) {
+    if (await page.evaluate(`document.activeElement.matches(${JSON.stringify(selector)})`)) {
+      assert.equal(await page.evaluate('getComputedStyle(document.activeElement).outlineStyle'), 'solid');
+      assert.equal(await page.evaluate('document.documentElement.scrollWidth > innerWidth'), false, selector);
+      return;
+    }
+    await page.key('Tab', 'Tab', 9);
+  }
+  assert.fail(`No se pudo enfocar con Tab: ${selector}`);
+}
+
 test('el HTML directo muestra cómo arrancar y la demo funciona por HTTP con teclado', async (t) => {
   const page = await browser.page(t, 320);
   await page.open(new URL('../frontend/index.html', import.meta.url).href, false);
@@ -77,6 +89,7 @@ test('el HTML directo muestra cómo arrancar y la demo funciona por HTTP con tec
   await notVisible(page, '#start-demo');
   await page.open(url);
   await notVisible(page, '#startup-message');
+  await page.evaluate("document.documentElement.style.fontSize = '200%'");
   await page.key('Tab', 'Tab', 9);
   assert.equal(await page.evaluate('document.activeElement.tagName'), 'SUMMARY');
   await page.key('Enter', 'Enter', 13);
@@ -87,14 +100,24 @@ test('el HTML directo muestra cómo arrancar y la demo funciona por HTTP con tec
   assert.equal(await page.evaluate('document.activeElement.id'), 'start-demo');
   await page.key('Enter', 'Enter', 13);
   await page.text('#sheet-votes', /4 de 5/);
-  const widths = await page.evaluate(`(() => {
-    const button = document.querySelector('[data-decision="approve"]');
-    const height = button.getBoundingClientRect().height;
-    document.documentElement.style.fontSize = '200%';
-    return { height, overflow: document.documentElement.scrollWidth > innerWidth };
-  })()`);
-  assert.ok(widths.height >= 56);
-  assert.equal(widths.overflow, false);
+  for (const selector of ['[data-decision="approve"]', '#guided-return', '#open-account', '#review-payment']) {
+    await tabTo(page, selector);
+    await page.key('Enter', 'Enter', 13);
+  }
+  await page.text('#payment-summary', /Cuota 1.*66\.000/);
+  await tabTo(page, '#payment-dialog [value="confirm"]');
+  await page.key('Enter', 'Enter', 13);
+  await page.text('#payment-receipt', /SIM-V1-C1/);
+  await tabTo(page, '#navigation [data-go="application"]');
+  await page.key('Enter', 'Enter', 13);
+  await tabTo(page, '[data-intention="need-to-talk"]');
+  await page.key('Enter', 'Enter', 13);
+  assert.equal(await page.evaluate('document.activeElement.id'), 'account-help-title');
+  await tabTo(page, '#account-help-reason');
+  await page.key('ArrowDown', 'ArrowDown', 40);
+  await tabTo(page, '#account-help-form button');
+  await page.key('Enter', 'Enter', 13);
+  await page.text('#account-help-status', /Solicitud simulada registrada/);
 });
 
 test('una sesión dañada recupera el recorrido normal y descarta solo la guía inválida', async (t) => {
@@ -231,6 +254,7 @@ test('solicitud normal, respaldo, pausa, costo, revisión, desembolso único y p
 
 test('la demo guiada conserva la reserva, los aportes y el avance de cada recorrido', async (t) => {
   const page = await open(t);
+  await startRequest(page, '8');
   await approveGuided(page);
   await page.text('[data-reminder-amount]', /66\.000/);
   await page.click('[data-intention="plan-to-pay"]');
@@ -262,12 +286,42 @@ test('la demo guiada conserva la reserva, los aportes y el avance de cada recorr
   await page.click('[data-variant="reserve"]');
   await page.text('#installment-breakdown', /Total pendiente \$7\.000/);
   await demoAction(page, 'exit-demo');
-  await page.text('#home-title', /Un préstamo pequeño/);
+  await page.text('#progress', /4 de 5 respaldos confirmados/);
   await demoAction(page, 'start-demo');
   await page.text('#installment-breakdown', /Total pendiente \$7\.000/);
   await demoAction(page, 'reset-demo');
   await page.text('#sheet-votes', /4 de 5/);
   await notVisible(page, '#guided-return');
+  await demoAction(page, 'exit-demo');
+  await page.text('#progress', /4 de 5 respaldos confirmados/);
+  await page.click('#circle [data-go="needs"]');
+  assert.equal(await page.evaluate('document.querySelector("#weeks").value'), '8');
+});
+
+test('el ejercicio de círculos empieza sin respaldos y conserva su avance separado', async (t) => {
+  const page = await open(t);
+  await startRequest(page, '8');
+  const exercise = new URL('?ejercicio=circulo', url).href;
+  await page.open(exercise);
+  await page.click('#home-application');
+  await page.click('#draft-submit');
+  await page.text('#progress', /0 de 5 respaldos confirmados/);
+  for (const [index, member] of members.entries()) {
+    await page.select('#invitee', member);
+    await page.click('#invite-form button[type="submit"]');
+    await changeProfile(page, member);
+    await page.click('#response-form [value="confirmed"]');
+    await changeProfile(page, 'diana');
+    await page.text('#progress', new RegExp(`${index + 1} (de 5 )?respaldos confirmados`));
+  }
+  await page.click('#review-button');
+  await page.click('#send-form button[type="submit"]');
+  await openBallot(page, 'luz');
+  await page.text('#sheet-votes', /0 de 5 votos/);
+  await page.open(url);
+  await page.text('#progress', /4 de 5 respaldos confirmados/);
+  await page.open(exercise);
+  await page.text('#sheet-votes', /0 de 5 votos/);
 });
 
 test('el simulador y Mi crédito muestran costos, pagos y ayuda privada durante el recorrido', async (t) => {

@@ -17,8 +17,10 @@ import {
 import { getCircleScore, getOwnScore, scoreComparisonExamples } from '../../backend/domain/score-state.mjs';
 import { getLoanAccount, helpReasons, payNextInstallment, requestLoanHelp } from '../../backend/domain/loan-account-state.mjs';
 
-const storageKey = 'credito-comunitario-hu-1-1';
-const presentationKey = 'credito-comunitario-hu-2-2';
+const circleExercise = new URLSearchParams(location.search).get('ejercicio') === 'circulo';
+const sessionSuffix = circleExercise ? '-ejercicio-circulo' : '';
+const storageKey = `credito-comunitario-hu-1-1${sessionSuffix}`;
+const presentationKey = `credito-comunitario-hu-2-2${sessionSuffix}`;
 const currency = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
 const percent = new Intl.NumberFormat('es-CO', { style: 'percent', maximumFractionDigits: 2 });
 const percentagePoints = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 });
@@ -57,7 +59,9 @@ const helpForm = byId('account-help-form');
 const sections = document.querySelectorAll('main section');
 const applicantViews = ['needs', 'circle', 'review', 'success'];
 const guidedVoter = installmentSupporters.at(-1);
-const normalState = loadSession(storageKey, createDemoState(), isStoredDemoState);
+const initialState = createDemoState();
+if (circleExercise) initialState.circle = {};
+const normalState = loadSession(storageKey, initialState, isStoredDemoState);
 const presentation = loadSession(presentationKey, {}, (value) => typeof value === 'object' && !Array.isArray(value));
 if (!isStoredDemoState(presentation.guided)) delete presentation.guided;
 let guided = Boolean(presentation.active && presentation.guided);

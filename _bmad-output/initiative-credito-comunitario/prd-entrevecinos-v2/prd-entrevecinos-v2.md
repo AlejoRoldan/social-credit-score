@@ -88,6 +88,8 @@ En este nivel se especifica el comportamiento que valida el dominio. Para V2 se 
 
 ## Medición y salida
 
+[Guion de facilitación y fichas de registro de V2](../../../docs/product/research/protocolo-exploratorio-v2.md)
+
 Cinco sesiones exploratorias de comprensión, con tareas sin instrucciones sobre dónde tocar. Para cada tarea, registrar rol, éxito sin ayuda, explicación textual, error y punto de abandono. En un ejercicio aparte, usar círculos de personas que ya se conocen. Registrar la ventana que declaró la persona antes de empezar, la primera invitación, el quinto respaldo, el cierre de votación y los motivos de demora o rechazo. El escenario guiado con votos precargados sirve para evaluar pantallas y el ejercicio de círculos mide los tiempos.
 
 | Métrica | Meta o decisión |
