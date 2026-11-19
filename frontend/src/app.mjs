@@ -15,6 +15,8 @@ import {
   canViewProject, confirmProjectTransfer, getProjectCase, submitProjectProposal, validateProjectProposal, voteOnProject,
 } from '../../backend/domain/project-state.mjs';
 import { getCircleScore, getOwnScore, scoreComparisonExamples } from '../../backend/domain/score-state.mjs';
+import { educationModule } from '../../backend/domain/education-content.mjs';
+import { getEducationProgress, submitEducationAttempt } from '../../backend/domain/education-state.mjs';
 import { getLoanAccount, helpReasons, payNextInstallment, requestLoanHelp } from '../../backend/domain/loan-account-state.mjs';
 
 const circleExercise = new URLSearchParams(location.search).get('ejercicio') === 'circulo';
@@ -56,6 +58,7 @@ const navigation = byId('navigation');
 const installmentReminder = byId('installment-reminder');
 const paymentDialog = byId('payment-dialog');
 const helpForm = byId('account-help-form');
+const educationForm = byId('education-form');
 const sections = document.querySelectorAll('main section');
 const applicantViews = ['needs', 'circle', 'review', 'success'];
 const guidedVoter = installmentSupporters.at(-1);
@@ -374,13 +377,35 @@ function renderLoanAccount(account) {
   byId('account-help').hidden = !next && !helpReason;
 }
 
-function renderOwnScore(score) {
+function renderOwnScore(score, educationBonus = 0) {
   byId('own-score-value').textContent = score ? `${score.value} de 100` : '';
   byId('own-score-result').hidden = !score;
   byId('own-score-insufficient').hidden = Boolean(score);
   byId('own-score-compliance').textContent = score?.history.compliance ?? '';
   byId('own-score-commitments').textContent = score?.history.commitments ?? '';
   byId('own-score-membership').textContent = score?.history.membership ?? '';
+  byId('own-education-bonus').hidden = educationBonus === 0;
+  byId('own-education-bonus').textContent = educationBonus ? `+${educationBonus} por comprender capital e intereses · Bono educativo simulado` : '';
+}
+
+function renderEducation({ number, attemptId, example, last, bonus }, retry = false) {
+  const { principal, payment, interest } = educationModule.practice;
+  byId('education-practice').textContent = `Diana debe ${money(principal)} de capital y paga ${money(payment)}. Los ${money(interest)} van a intereses y ${money(payment - interest)} a capital. Quedan ${money(principal - (payment - interest))} de capital.`;
+  educationForm.reset();
+  educationForm.dataset.attemptId = attemptId;
+  const showResult = Boolean(last && !retry);
+  educationForm.hidden = showResult;
+  byId('education-result').hidden = !showResult;
+  byId('education-retry').hidden = bonus > 0;
+  byId('education-result-title').textContent = showResult ? bonus > 0 ? `Ganaste +${bonus} puntos educativos` : 'Revisa tus respuestas' : '';
+  byId('education-result-attempt').textContent = showResult ? last.number === 1 ? 'Primer intento' : `Reintento ${last.number - 1}` : '';
+  byId('education-capital-feedback').textContent = showResult && !last.capitalCorrect
+    ? 'Resta del saldo solo la parte del pago que fue a capital. Puedes calcularla restando los intereses al pago.' : '';
+  byId('education-cash-feedback').textContent = showResult && !last.cashCorrect
+    ? 'Suma los pagos previstos y la nueva cuota. Compara ese total con el dinero disponible después de lo esencial.' : '';
+  byId('education-attempt-number').textContent = number === 1 ? 'Primer intento' : `Reintento ${number - 1}`;
+  byId('education-capital-case').textContent = `Diana debía ${money(example.principal)} de capital. Pagó ${money(example.payment)}. Del pago, ${money(example.interest)} fueron a intereses y el resto, a capital.`;
+  byId('education-cash-case').textContent = `Después de reservar comida y transporte, Diana tiene ${money(example.available)} y otros pagos por ${money(example.other)} esa semana. Un nuevo préstamo cubriría un vencimiento anterior y añadiría una cuota de ${money(example.newPayment)} esa semana. Los otros pagos siguen pendientes.`;
 }
 
 function renderScoreComparison() {
@@ -678,6 +703,15 @@ function show(requestedView, moveFocus = true) {
   let view = requestedView;
 
   if (view !== 'score') renderOwnScore(null);
+  if (view !== 'education') {
+    educationForm.reset();
+    delete educationForm.dataset.attemptId;
+    byId('education-result').hidden = true;
+    for (const id of ['education-result-title', 'education-result-attempt', 'education-capital-feedback', 'education-cash-feedback',
+      'education-attempt-number', 'education-capital-case', 'education-cash-case']) {
+      byId(id).textContent = '';
+    }
+  }
   if (!financeAllowed) renderFinance(null, null);
 
   if (view === 'account' && account) {
@@ -685,7 +719,9 @@ function show(requestedView, moveFocus = true) {
   } else if (view === 'home') {
     byId('home-application').textContent = state.sent ? 'Ver mi solicitud' : 'Simular un préstamo';
   } else if (view === 'score') {
-    renderOwnScore(getOwnScore(profile.value));
+    renderOwnScore(getOwnScore(profile.value), getEducationProgress(state, profile.value)?.bonus);
+  } else if (view === 'education') {
+    renderEducation(getEducationProgress(state, profile.value));
   } else if (view === 'project') {
     renderProject();
   } else if (view === 'installment' && installmentAllowed) {
@@ -734,7 +770,7 @@ function show(requestedView, moveFocus = true) {
   renderInstallmentReminder(view === 'success' ? getInstallmentReminder(state, profile.value) : null, account);
   navigation.hidden = false;
   byId('guided-vote').hidden = installmentAllowed || (profile.value === guidedVoter && view === 'sheet');
-  const navView = view === 'project' && financeAllowed ? 'finance'
+  const navView = view === 'education' ? 'score' : view === 'project' && financeAllowed ? 'finance'
     : ['home', 'account', 'finance', 'installment', 'project', 'score'].includes(view) ? view
       : isApplicant ? 'application' : view === 'sheet' ? 'inbox' : view;
   for (const button of navigation.querySelectorAll('[data-go]')) {
@@ -838,7 +874,7 @@ function showProfile(moveFocus, destination) {
   selectedVersion = null;
   const returnToVote = guided && profile.value === guidedVoter && !getRecordedDisbursement(state);
   if (returnToVote) selectedVersion = getInbox(state, guidedVoter).find(({ isCurrent }) => isCurrent)?.version ?? null;
-  const view = destination ?? (['project', 'score', 'finance'].includes(currentView) ? currentView : returnToVote ? 'sheet'
+  const view = destination ?? (currentView === 'education' ? 'score' : ['project', 'score', 'finance'].includes(currentView) ? currentView : returnToVote ? 'sheet'
     : currentView === 'installment' ? currentView : profile.value === applicant.id ? applicantView : state.sent ? 'inbox' : 'support');
   show(view, moveFocus);
   const name = profile.selectedOptions[0].textContent;
@@ -857,6 +893,28 @@ profile.addEventListener('change', () => {
 });
 byId('home-application').addEventListener('click', () => switchProfile(applicant.id, 'application'));
 byId('home-support').addEventListener('click', () => switchProfile(guidedVoter, 'support'));
+
+byId('education-retry').addEventListener('click', () => {
+  const progress = getEducationProgress(state, profile.value);
+  if (currentView !== 'education' || !progress?.last || progress.bonus) return;
+  renderEducation(progress, true);
+  byId('education-form-title').focus();
+});
+educationForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  if (currentView !== 'education' || educationForm.hidden || !educationForm.reportValidity()) return;
+  const fields = new FormData(educationForm);
+  const result = submitEducationAttempt(state, profile.value, educationForm.dataset.attemptId, {
+    capital: Number(fields.get('capital')),
+    capitalReason: fields.get('capitalReason'),
+    shortfall: Number(fields.get('shortfall')),
+    cashReason: fields.get('cashReason'),
+  });
+  if (!result) return;
+  saveState();
+  renderEducation(getEducationProgress(state, profile.value));
+  byId('education-result-title').focus();
+});
 
 const helpReasonSelect = byId('account-help-reason');
 helpReasonSelect.append(...helpReasons.map((reason) => new Option(reason, reason)));
