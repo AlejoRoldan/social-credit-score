@@ -44,6 +44,50 @@ async function changeProfile(page, id) {
 const navigate = (page, view) => page.click(`#navigation [data-go="${view}"]`);
 const notVisible = async (page, selector) => assert.equal(await page.visible(selector), false, selector);
 
+test('la práctica otorga un único bono privado al aprobar ambas competencias', async (t) => {
+  const page = await open(t, 320);
+  await navigate(page, 'score');
+  await page.click('#score [data-go="education"]');
+  await page.text('#education-practice', /1\.000\.000.*200\.000.*Quedan/);
+  assert.equal(await page.evaluate(`(() => {
+    const root = document.documentElement;
+    root.style.fontSize = '200%';
+    const fits = innerWidth === 320 && root.scrollWidth <= root.clientWidth;
+    root.style.fontSize = '';
+    return fits;
+  })()`), true);
+
+  await page.type('#education-capital', '240000');
+  await page.click('#education-form input[value="principal"]');
+  await page.type('#education-shortfall', '30000');
+  await page.click('#education-form input[value="new-payment"]');
+  await page.click('#education-form button[type="submit"]');
+  await page.text('#education-result-title', /Revisa tus respuestas/);
+  await page.text('#education-result-attempt', /Primer intento/);
+
+  await page.click('#education-retry');
+  await page.text('#education-capital-case', /420\.000/);
+  await page.type('#education-capital', '390000');
+  await page.click('#education-form input[value="principal"]');
+  await page.type('#education-shortfall', '25000');
+  await page.click('#education-form input[value="new-payment"]');
+  await page.click('#education-form button[type="submit"]');
+  await page.text('#education-result-title', /\+2 puntos educativos/);
+  await page.text('#education-result-attempt', /Reintento 1/);
+  await notVisible(page, '#education-retry');
+
+  await page.click('#education [data-go="score"]');
+  await page.reload();
+  await page.text('#own-score-insufficient', /Historial insuficiente/);
+  await page.text('#own-education-bonus', /\+2 por comprender capital e intereses/);
+  await changeProfile(page, 'luz');
+  await notVisible(page, '#own-education-bonus');
+  assert.equal(await page.evaluate('document.querySelector("#own-education-bonus").textContent'), '');
+  assert.equal(await page.evaluate('document.querySelector("#education-attempt-number").textContent'), '');
+  await changeProfile(page, 'diana');
+  await page.text('#own-education-bonus', /\+2 por comprender capital e intereses/);
+});
+
 async function openBallot(page, profile, version = 1) {
   await changeProfile(page, profile);
   await navigate(page, 'inbox');

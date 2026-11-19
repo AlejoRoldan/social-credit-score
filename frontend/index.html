@@ -304,6 +304,12 @@
           <div><dt>Tiempo de vínculo</dt><dd id="own-score-membership"></dd></div>
         </dl>
       </div>
+      <div class="callout">
+        <h2>Aprender sobre intereses</h2>
+        <p>Practica cuánto capital queda después de un pago. Puedes solicitar crédito sin completar la lección.</p>
+        <p id="own-education-bonus" hidden></p>
+        <div class="actions"><button type="button" class="secondary" data-go="education">Abrir práctica</button></div>
+      </div>
       <details id="score-comparison">
         <summary>Comparar ejemplos</summary>
         <div class="score-content">
@@ -313,6 +319,49 @@
           <p>Los puntajes son ilustrativos. El crédito, el manejo de impagos y los giros se deciden con sus propias reglas.</p>
         </div>
       </details>
+    </section>
+
+    <section class="card" id="education" aria-labelledby="education-title" hidden>
+      <h1 id="education-title" tabindex="-1">Capital e intereses</h1>
+      <div class="callout">
+        <h2>Cuando pagas solo intereses</h2>
+        <p id="education-practice"></p>
+      </div>
+      <form id="education-form" aria-labelledby="education-form-title">
+        <h2 id="education-form-title" tabindex="-1">Resuelve un caso nuevo</h2>
+        <p id="education-attempt-number"></p>
+        <fieldset>
+          <legend>Capital pendiente</legend>
+          <p id="education-capital-case"></p>
+          <label for="education-capital">¿Cuánto capital queda en pesos colombianos?</label>
+          <input id="education-capital" name="capital" type="number" inputmode="numeric" min="0" step="1" required>
+          <div class="education-reasons" role="group" aria-labelledby="education-capital-reason">
+            <p id="education-capital-reason">¿Por qué queda ese saldo?</p>
+            <label class="choice"><input type="radio" name="capitalReason" value="payment" required>Todo pago reduce el capital por el monto pagado.</label>
+            <label class="choice"><input type="radio" name="capitalReason" value="principal">Solo la parte aplicada a capital reduce ese saldo.</label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Efecto de otro préstamo</legend>
+          <p id="education-cash-case"></p>
+          <label for="education-shortfall">¿Cuánto dinero faltaría esa semana en pesos colombianos?</label>
+          <input id="education-shortfall" name="shortfall" type="number" inputmode="numeric" min="0" step="1" required>
+          <div class="education-reasons" role="group" aria-labelledby="education-cash-reason">
+            <p id="education-cash-reason">¿Por qué cambia el presupuesto?</p>
+            <label class="choice"><input type="radio" name="cashReason" value="new-payment" required>El dinero del préstamo ya tiene destino y la cuota nueva se suma a los pagos de la semana.</label>
+            <label class="choice"><input type="radio" name="cashReason" value="free-cash">El dinero del préstamo queda libre para pagar la cuota nueva.</label>
+          </div>
+        </fieldset>
+        <button type="submit">Revisar mis respuestas</button>
+      </form>
+      <div id="education-result" class="callout" hidden>
+        <h2 id="education-result-title" tabindex="-1"></h2>
+        <p id="education-result-attempt"></p>
+        <p id="education-capital-feedback"></p>
+        <p id="education-cash-feedback"></p>
+        <button type="button" id="education-retry" class="secondary">Intentar con otro caso</button>
+      </div>
+      <div class="actions"><button type="button" class="secondary" data-go="score">Volver a Mi puntaje</button></div>
     </section>
 
     <section class="card" id="finance" aria-labelledby="finance-title" hidden>
