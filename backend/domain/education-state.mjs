@@ -1,5 +1,5 @@
 import { applicant, supporters } from './demo-state.mjs';
-import { educationModule } from './education-content.mjs';
+import { educationCaseForAttempt, educationModule } from './education-content.mjs';
 
 function progressFor(state, profileId) {
   if (profileId !== applicant.id && !supporters.some(({ id }) => id === profileId)) return null;
@@ -24,11 +24,10 @@ export function getEducationProgress(state, profileId) {
   const progress = progressFor(state, profileId);
   if (!progress) return null;
   const number = progress.attempts.length + 1;
-  const example = educationModule.cases[(number - 1) % educationModule.cases.length];
   return {
     number,
     attemptId: `${educationModule.version}-${number}`,
-    example,
+    example: educationCaseForAttempt(number),
     last: progress.attempts.at(-1) ?? null,
     bonus: progress.award?.points ?? 0,
   };
