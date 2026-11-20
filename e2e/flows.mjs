@@ -817,6 +817,42 @@ test('Diana cancela o confirma ayuda privada y accede directamente a orientació
   await page.text('#plan-help-status', /Quiero hablar sobre mi fecha de pago/);
 });
 
+test('al recargar, Ayuda privada y Orientación devuelven al origen y restauran el foco', async (t) => {
+  const page = await open(t, 320);
+  const focus = () => page.evaluate('document.activeElement.id');
+  await navigate(page, 'payment-plan');
+  await page.click('#open-plan-comparison');
+  await page.click('#open-comparison-help');
+  await page.select('#plan-help-reason', 'Quiero hablar sobre mi fecha de pago');
+  await page.reload();
+  await page.text('#back-from-plan-help', /^Cancelar y volver$/);
+  await page.click('#back-from-plan-help');
+  assert.equal(await focus(), 'open-comparison-help');
+
+  await page.click('#open-comparison-help');
+  await page.select('#plan-help-reason', 'Quiero hablar sobre mi fecha de pago');
+  await page.click('#plan-help-form button[type="submit"]');
+  await page.reload();
+  await page.text('#back-from-plan-help', /^Volver$/);
+  await page.click('#back-from-plan-help');
+  assert.equal(await focus(), 'open-comparison-help');
+
+  await page.click('#open-comparison-help');
+  await page.click('#open-help-orientation');
+  await page.reload();
+  await page.click('#back-from-plan-orientation');
+  assert.equal(await focus(), 'open-help-orientation');
+  await page.text('#plan-help-status', /Solicitud de prueba registrada.*Quiero hablar sobre mi fecha de pago/);
+  await page.click('#back-from-plan-help');
+  assert.equal(await focus(), 'open-comparison-help');
+
+  await page.click('#back-from-plan-comparison');
+  await page.click('#open-plan-orientation');
+  await page.reload();
+  await page.click('#back-from-plan-orientation');
+  assert.equal(await focus(), 'open-plan-orientation');
+});
+
 test('V3 integrada: Diana conserva el bono, el plan, la prórroga y la ayuda en una sesión privada', async (t) => {
   const page = await open(t, 320);
   await navigate(page, 'score');

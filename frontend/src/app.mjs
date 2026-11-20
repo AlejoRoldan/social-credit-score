@@ -66,8 +66,12 @@ const planInputs = planForm.querySelectorAll('input');
 const planViews = ['payment-plan', 'plan-comparison', 'plan-help', 'plan-orientation'];
 const comparisonScenario = byId('plan-comparison-scenario');
 const planHelpForm = byId('plan-help-form');
-let returnFromPlanHelp = 'open-plan-help';
-let returnFromOrientation = 'open-plan-orientation';
+const planHelpOpeners = [...document.querySelectorAll('[data-plan-help]')];
+const orientationOpeners = [...document.querySelectorAll('[data-plan-orientation]')];
+const defaultPlanHelpOpener = byId('open-plan-help');
+const defaultOrientationOpener = byId('open-plan-orientation');
+let returnFromPlanHelp = defaultPlanHelpOpener;
+let returnFromOrientation = defaultOrientationOpener;
 const installmentReminder = byId('installment-reminder');
 const paymentDialog = byId('payment-dialog');
 const helpForm = byId('account-help-form');
@@ -128,7 +132,11 @@ function hasStorageWarning(id) {
 
 function saveNavigation() {
   const slot = guided ? 'guidedNavigation' : 'normalNavigation';
-  presentation[slot] = { view: currentView, profileId: profile.value, selectedVersion, applicantView, installmentVariant };
+  presentation[slot] = {
+    view: currentView, profileId: profile.value, selectedVersion, applicantView, installmentVariant,
+    planHelpOpenerId: returnFromPlanHelp.id,
+    orientationOpenerId: returnFromOrientation.id,
+  };
   if (!guided) {
     if (editingVersion) {
       const form = new FormData(draftForm);
@@ -163,6 +171,8 @@ function openJourney(useGuide, reset = false, moveFocus = true) {
   applicantView = saved?.applicantView ?? 'needs';
   selectedVersion = saved?.selectedVersion ?? null;
   installmentVariant = saved?.installmentVariant === 'empty' ? 'empty' : 'reserve';
+  returnFromPlanHelp = planHelpOpeners.find((button) => button.id === saved?.planHelpOpenerId) ?? defaultPlanHelpOpener;
+  returnFromOrientation = orientationOpeners.find((button) => button.id === saved?.orientationOpenerId) ?? defaultOrientationOpener;
   editingVersion = null;
   draftForm.elements.amount.value = state.draft.amount;
   draftForm.elements.weeks.value = state.draft.weeks;
@@ -934,6 +944,10 @@ function show(requestedView, moveFocus = true) {
     else button.removeAttribute('aria-current');
   }
   for (const section of sections) section.hidden = section.id !== view;
+  if (view !== 'plan-orientation') returnFromOrientation = defaultOrientationOpener;
+  if (view !== 'plan-help' && returnFromOrientation.dataset.planOrientation !== 'plan-help') {
+    returnFromPlanHelp = defaultPlanHelpOpener;
+  }
   currentView = view;
   saveNavigation();
   if (moveFocus) byId(`${view}-title`).focus();
@@ -1078,25 +1092,25 @@ byId('back-from-plan-comparison').addEventListener('click', () => {
   show('payment-plan', false);
   byId('open-plan-comparison').focus();
 });
-for (const button of document.querySelectorAll('[data-plan-help]')) {
+for (const button of planHelpOpeners) {
   button.addEventListener('click', () => {
-    returnFromPlanHelp = button.id;
+    returnFromPlanHelp = button;
     show('plan-help');
   });
 }
-for (const button of document.querySelectorAll('[data-plan-orientation]')) {
+for (const button of orientationOpeners) {
   button.addEventListener('click', () => {
-    returnFromOrientation = button.id;
+    returnFromOrientation = button;
     show('plan-orientation');
   });
 }
 byId('back-from-plan-help').addEventListener('click', () => {
-  const button = byId(returnFromPlanHelp);
+  const button = returnFromPlanHelp;
   show(button.dataset.planHelp, false);
   button.focus();
 });
 byId('back-from-plan-orientation').addEventListener('click', () => {
-  const button = byId(returnFromOrientation);
+  const button = returnFromOrientation;
   show(button.dataset.planOrientation, false);
   button.focus();
 });
