@@ -48,7 +48,7 @@ test('la práctica otorga un único bono privado al aprobar ambas competencias',
   const page = await open(t, 320);
   await navigate(page, 'score');
   await page.click('#score [data-go="education"]');
-  await page.text('#education-practice', /1\.000\.000.*200\.000.*Quedan/);
+  await page.text('#education-practice', /1\.000\.000.*200\.000.*\$0 COP a capital.*Quedan.*1\.000\.000/);
   assert.equal(await page.evaluate(`(() => {
     const root = document.documentElement;
     root.style.fontSize = '200%';
@@ -64,28 +64,63 @@ test('la práctica otorga un único bono privado al aprobar ambas competencias',
   await page.click('#education-form button[type="submit"]');
   await page.text('#education-result-title', /Revisa tus respuestas/);
   await page.text('#education-result-attempt', /Primer intento/);
+  await page.text('#education-capital-feedback', /Resta del saldo solo/);
+  assert.equal(await page.evaluate('document.querySelector("#education-cash-feedback").textContent'), '');
 
   await page.click('#education-retry');
   await page.text('#education-capital-case', /420\.000/);
   await page.type('#education-capital', '390000');
   await page.click('#education-form input[value="principal"]');
-  await page.type('#education-shortfall', '25000');
+  await page.type('#education-shortfall', '0');
+  await page.click('#education-form input[value="new-payment"]');
+  await page.click('#education-form button[type="submit"]');
+  await page.text('#education-result-title', /Revisa tus respuestas/);
+  await page.text('#education-result-attempt', /Reintento 1/);
+  await page.text('#education-cash-feedback', /Suma los pagos previstos/);
+  assert.equal(await page.evaluate('document.querySelector("#education-capital-feedback").textContent'), '');
+
+  await page.click('#education-retry');
+  await page.text('#education-capital-case', /430\.000/);
+  await page.type('#education-capital', '400000');
+  await page.click('#education-form input[value="principal"]');
+  await page.type('#education-shortfall', '30000');
   await page.click('#education-form input[value="new-payment"]');
   await page.click('#education-form button[type="submit"]');
   await page.text('#education-result-title', /\+2 puntos educativos/);
-  await page.text('#education-result-attempt', /Reintento 1/);
+  await page.text('#education-result-attempt', /Reintento 2/);
   await notVisible(page, '#education-retry');
 
-  await page.click('#education [data-go="score"]');
+  await changeProfile(page, 'luz');
+  await notVisible(page, '#education');
+  await notVisible(page, '#own-education-bonus');
+  assert.deepEqual(await page.evaluate(`['#own-education-bonus', '#education-result-title', '#education-result-attempt']
+    .map(selector => document.querySelector(selector).textContent)`), ['', '', '']);
+  assert.equal(await page.evaluate('document.querySelector("#education-form").hasAttribute("data-attempt-id")'), false);
+  assert.equal(await page.evaluate('document.querySelector("#education-capital").value'), '');
+  await changeProfile(page, 'diana');
   await page.reload();
   await page.text('#own-score-insufficient', /Historial insuficiente/);
   await page.text('#own-education-bonus', /\+2 por comprender capital e intereses/);
-  await changeProfile(page, 'luz');
-  await notVisible(page, '#own-education-bonus');
-  assert.equal(await page.evaluate('document.querySelector("#own-education-bonus").textContent'), '');
-  assert.equal(await page.evaluate('document.querySelector("#education-attempt-number").textContent'), '');
-  await changeProfile(page, 'diana');
-  await page.text('#own-education-bonus', /\+2 por comprender capital e intereses/);
+});
+
+test('la evaluación avisa cuando el bono del primer intento queda solo en memoria', async (t) => {
+  const page = await open(t);
+  await navigate(page, 'score');
+  await page.click('#score [data-go="education"]');
+  await page.type('#education-capital', '285000');
+  await page.click('#education-form input[value="principal"]');
+  await page.type('#education-shortfall', '30000');
+  await page.click('#education-form input[value="new-payment"]');
+  await page.evaluate(`Storage.prototype.setItem = () => { throw new Error('Storage de prueba no disponible'); }`);
+  await page.click('#education-form button[type="submit"]');
+  await page.text('#education-result-attempt', /Primer intento/);
+  await page.text('#education-result-title', /\+2 puntos educativos/);
+  await page.text('#education-storage-note', /Al recargar, podrías perderlo/);
+  await page.click('#education [data-go="score"]');
+  await page.text('#own-education-storage-note', /Al recargar, podrías perderlo/);
+  await page.reload();
+  await page.text('#education-attempt-number', /Primer intento/);
+  await notVisible(page, '#education-result');
 });
 
 async function openBallot(page, profile, version = 1) {
@@ -612,4 +647,253 @@ test('un voto en contra bloquea el uso de la reserva y el giro colectivo', async
   await page.text('#project-status', /0 de 5/);
   await page.click('#project-history summary');
   await page.text('#project-history-list', /Propuesta rechazada/);
+});
+
+test('Diana actualiza el plan privado y recupera el resultado al recargar', async (t) => {
+  const page = await open(t, 320);
+  const save = () => page.click('#payment-plan-form [type="submit"]');
+  const edit = () => page.click('#plan-editor summary');
+  await navigate(page, 'payment-plan');
+  await page.text('#plan-installment-gap', /\$35\.000/);
+  await page.text('#plan-available', /\$15\.000/);
+  await page.text('#plan-essentials', /\$45\.000/);
+  await page.text('#plan-income-status', /por confirmar/);
+  const contrast = await page.evaluate(String.raw`['.payment-plan-result', '#plan-income-status'].map(selector => {
+    const style = getComputedStyle(document.querySelector(selector));
+    const luminance = (color) => color.match(/\d+/g).slice(0, 3).map(Number).map(channel => {
+      const value = channel / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    }).reduce((total, value, index) => total + value * [0.2126, 0.7152, 0.0722][index], 0);
+    const text = luminance(style.color);
+    const background = luminance(style.backgroundColor);
+    return (Math.max(text, background) + 0.05) / (Math.min(text, background) + 0.05);
+  })`);
+  assert.ok(contrast.every((ratio) => ratio >= 4.5), `Contraste de texto: ${contrast.join(', ')}`);
+
+  await edit();
+  assert.equal(await page.evaluate(`(() => {
+    const root = document.documentElement;
+    root.style.fontSize = '200%';
+    const fits = innerWidth === 320 && root.scrollWidth <= root.clientWidth;
+    root.style.fontSize = '';
+    return fits;
+  })()`), true);
+  await page.type('#plan-cash', '25000');
+  await page.click('#payment-plan-form input[name="incomeConfirmed"]');
+  await save();
+  await page.text('#plan-income-status', /confirmado y llega después del vencimiento/);
+  await page.text('#plan-available', /\$0 COP/);
+  await page.text('#plan-essential-gap', /\$20\.000/);
+  await page.text('#plan-installment-gap', /\$50\.000/);
+  assert.equal(await page.evaluate('document.activeElement.id'), 'plan-result-title');
+
+  await edit();
+  await page.type('#plan-cash', '90000');
+  await page.click('#plan-cancel');
+  await edit();
+  assert.equal(await page.evaluate('document.querySelector("#plan-cash").value'), '25000');
+  await page.type('#plan-installment', '65000');
+  await page.evaluate(`document.querySelector('#plan-installment-date').value = '2026-11-21'`);
+  await save();
+  await page.text('#plan-due-amount', /\$65\.000/);
+  await page.text('#plan-due-date', /21 de noviembre de 2026/);
+  await page.text('#plan-income-status', /se incluye en el cálculo/);
+  await page.text('#plan-available', /\$60\.000/);
+  await page.text('#plan-installment-gap', /\$5\.000/);
+  await page.text('#plan-essential-gap', /\$20\.000/);
+
+  await edit();
+  await page.type('#plan-installment', '0');
+  await save();
+  assert.equal(await page.evaluate('document.querySelector("#plan-editor").open'), true);
+  assert.equal(await page.evaluate('document.querySelector("#plan-installment").validity.rangeUnderflow'), true);
+  assert.ok(await page.evaluate('document.querySelector("#plan-installment").validationMessage'));
+  await page.text('#plan-due-amount', /\$65\.000/);
+
+  await page.reload();
+  await page.text('#plan-available', /\$60\.000/);
+  await page.text('#plan-due-amount', /\$65\.000/);
+  await page.text('#plan-due-date', /21 de noviembre de 2026/);
+  await page.text('#plan-installment-gap', /\$5\.000/);
+  await changeProfile(page, 'luz');
+  await notVisible(page, '#navigation [data-go="payment-plan"]');
+  await notVisible(page, '#payment-plan');
+  assert.deepEqual(await page.evaluate('[document.querySelector("#plan-available").textContent, document.querySelector("#plan-cash").value]'), ['', '']);
+  await changeProfile(page, 'diana');
+  await navigate(page, 'payment-plan');
+  await page.text('#plan-available', /\$60\.000/);
+
+  await page.evaluate(`Storage.prototype.setItem = () => { throw new Error('Storage de prueba no disponible'); }`);
+  await edit();
+  await page.type('#plan-cash', '10000');
+  await save();
+  await page.text('#plan-installment-gap', /\$20\.000/);
+  await page.text('#plan-storage-note', /Al recargar, podrías perder los cambios/);
+});
+
+test('el plan guiado retira el aviso cuando una escritura posterior guarda los cambios', async (t) => {
+  const page = await open(t);
+  await demoAction(page, 'start-demo');
+  await changeProfile(page, 'diana');
+  await navigate(page, 'payment-plan');
+  await page.click('#plan-editor summary');
+  await page.type('#plan-cash', '53000');
+  await page.evaluate(`window.saveOriginalPlanStorage = Storage.prototype.setItem;
+    Storage.prototype.setItem = () => { throw new Error('Storage de prueba no disponible'); };`);
+  await page.click('#payment-plan-form [type="submit"]');
+  await page.text('#plan-storage-note', /Al recargar, podrías perder los cambios/);
+  await page.evaluate('Storage.prototype.setItem = window.saveOriginalPlanStorage');
+  await navigate(page, 'payment-plan');
+  await notVisible(page, '#plan-storage-note');
+  await page.reload();
+  await page.text('#plan-available', /\$8\.000/);
+});
+
+test('Diana compara costos y ve el calendario vigente de cada escenario', async (t) => {
+  const page = await open(t, 320);
+  await navigate(page, 'payment-plan');
+  await page.click('#open-plan-comparison');
+  await page.text('#plan-comparison-status', /pendiente.*original sigue vigente/);
+  await page.text('#plan-original-terms', /\$50\.000.*Un pago.*\$5\.000.*\$50\.000/);
+  await page.text('#plan-alternative-terms', /\$30\.000.*Dos pagos semanales.*\$15\.000.*\$60\.000.*27 de noviembre/);
+  await page.text('#plan-comparison-difference', /baja \$20\.000.*aumenta \$10\.000/);
+  await page.text('#plan-comparison-shortfall', /originales: faltan hasta \$35\.000.*mayor: faltan hasta \$45\.000/);
+  assert.equal(await page.evaluate(`(() => {
+    const root = document.documentElement;
+    root.style.fontSize = '200%';
+    const fits = innerWidth === 320 && root.scrollWidth <= root.clientWidth;
+    root.style.fontSize = '';
+    return fits;
+  })()`), true);
+
+  await page.select('#plan-comparison-scenario', 'offer');
+  await page.text('#plan-comparison-status', /Oferta nueva.*Ninguna.*vigente/);
+  await page.select('#plan-comparison-scenario', 'same-total');
+  await page.text('#plan-comparison-difference', /total a devolver es el mismo/);
+  await page.select('#plan-comparison-scenario', 'unavailable');
+  await page.text('#plan-comparison-status', /No hay un plazo alternativo disponible/);
+  await notVisible(page, '#plan-alternative');
+  await page.click('#back-from-plan-comparison');
+  await page.text('#plan-due-amount', /\$50\.000/);
+  await page.click('#open-plan-comparison');
+  await page.select('#plan-comparison-scenario', 'agreed');
+  await page.text('#plan-comparison-status', /Prórroga acordada.*está vigente/);
+  await page.reload();
+  await page.text('#plan-comparison-status', /Prórroga acordada/);
+  await page.click('#back-from-plan-comparison');
+  await page.text('#plan-schedule-status', /Primera cuota de la prórroga acordada/);
+  await page.text('#plan-due-amount', /\$30\.000/);
+  await page.text('#plan-due-date', /20 de noviembre/);
+});
+
+test('Diana cancela o confirma ayuda privada y accede directamente a orientación', async (t) => {
+  const page = await open(t, 320);
+  await navigate(page, 'payment-plan');
+  await page.click('#open-plan-orientation');
+  await page.text('#plan-orientation', /Ruta de prueba.*no se piden datos.*círculo/);
+  await page.click('#back-from-plan-orientation');
+  assert.equal(await page.evaluate('document.activeElement.id'), 'open-plan-orientation');
+  await page.click('#open-plan-help');
+  await page.select('#plan-help-reason', 'Quiero hablar sobre mi fecha de pago');
+  await page.click('#back-from-plan-help');
+  await page.text('#plan-installment-gap', /\$35\.000/);
+  await page.click('#open-plan-comparison');
+  await page.click('#open-comparison-help');
+  await notVisible(page, '#plan-help-status');
+  assert.equal(await page.evaluate('document.querySelector("#plan-help-reason").value'), '');
+  await page.select('#plan-help-reason', 'Quiero hablar sobre mi fecha de pago');
+  await page.click('#plan-help-form button[type="submit"]');
+  await page.text('#plan-help-status', /Solicitud de prueba registrada.*Quiero hablar sobre mi fecha de pago/);
+  await notVisible(page, '#plan-help-form');
+  await page.reload();
+  await page.text('#plan-help-status', /Solicitud de prueba registrada/);
+  await changeProfile(page, 'luz');
+  await notVisible(page, '#plan-help');
+  assert.equal(await page.evaluate('document.querySelector("#plan-help-status").textContent'), '');
+  await changeProfile(page, 'diana');
+  await navigate(page, 'payment-plan');
+  await page.text('#plan-installment-gap', /\$35\.000/);
+  await page.click('#open-plan-help');
+  await page.text('#plan-help-status', /Quiero hablar sobre mi fecha de pago/);
+});
+
+test('al recargar, Ayuda privada y Orientación devuelven al origen y restauran el foco', async (t) => {
+  const page = await open(t, 320);
+  const focus = () => page.evaluate('document.activeElement.id');
+  await navigate(page, 'payment-plan');
+  await page.click('#open-plan-comparison');
+  await page.click('#open-comparison-help');
+  await page.select('#plan-help-reason', 'Quiero hablar sobre mi fecha de pago');
+  await page.reload();
+  await page.text('#back-from-plan-help', /^Cancelar y volver$/);
+  await page.click('#back-from-plan-help');
+  assert.equal(await focus(), 'open-comparison-help');
+
+  await page.click('#open-comparison-help');
+  await page.select('#plan-help-reason', 'Quiero hablar sobre mi fecha de pago');
+  await page.click('#plan-help-form button[type="submit"]');
+  await page.reload();
+  await page.text('#back-from-plan-help', /^Volver$/);
+  await page.click('#back-from-plan-help');
+  assert.equal(await focus(), 'open-comparison-help');
+
+  await page.click('#open-comparison-help');
+  await page.click('#open-help-orientation');
+  await page.reload();
+  await page.click('#back-from-plan-orientation');
+  assert.equal(await focus(), 'open-help-orientation');
+  await page.text('#plan-help-status', /Solicitud de prueba registrada.*Quiero hablar sobre mi fecha de pago/);
+  await page.click('#back-from-plan-help');
+  assert.equal(await focus(), 'open-comparison-help');
+
+  await page.click('#back-from-plan-comparison');
+  await page.click('#open-plan-orientation');
+  await page.reload();
+  await page.click('#back-from-plan-orientation');
+  assert.equal(await focus(), 'open-plan-orientation');
+});
+
+test('V3 integrada: Diana conserva el bono, el plan, la prórroga y la ayuda en una sesión privada', async (t) => {
+  const page = await open(t, 320);
+  await navigate(page, 'score');
+  await page.click('#score [data-go="education"]');
+  await page.type('#education-capital', '285000');
+  await page.click('#education-form input[value="principal"]');
+  await page.type('#education-shortfall', '30000');
+  await page.click('#education-form input[value="new-payment"]');
+  await page.click('#education-form button[type="submit"]');
+  await page.text('#education-result-title', /\+2 puntos educativos/);
+
+  await navigate(page, 'payment-plan');
+  await page.click('#plan-editor summary');
+  await page.type('#plan-cash', '65000');
+  await page.click('#payment-plan-form button[type="submit"]');
+  await page.text('#plan-available', /\$20\.000/);
+  await page.text('#plan-installment-gap', /\$30\.000/);
+  await page.click('#open-plan-comparison');
+  await page.text('#plan-comparison-status', /pendiente.*original sigue vigente/);
+  await page.select('#plan-comparison-scenario', 'agreed');
+  await page.text('#plan-comparison-status', /Prórroga acordada.*está vigente/);
+
+  await page.click('#open-comparison-help');
+  await page.select('#plan-help-reason', 'Quiero hablar sobre mi fecha de pago');
+  await page.click('#plan-help-form button[type="submit"]');
+  await page.reload();
+  await page.text('#plan-help-status', /Solicitud de prueba registrada.*Quiero hablar sobre mi fecha de pago/);
+
+  await changeProfile(page, 'luz');
+  await notVisible(page, '#plan-help');
+  await notVisible(page, '#navigation [data-go="payment-plan"]');
+  assert.equal(await page.evaluate('document.querySelector("#plan-help-status").textContent'), '');
+  await navigate(page, 'score');
+  await notVisible(page, '#own-education-bonus');
+
+  await changeProfile(page, 'diana');
+  await page.text('#own-education-bonus', /^\+2 por comprender capital e intereses/);
+  await navigate(page, 'payment-plan');
+  await page.text('#plan-schedule-status', /Primera cuota de la prórroga acordada/);
+  await page.text('#plan-due-date', /20 de noviembre/);
+  await page.text('#plan-installment-gap', /\$10\.000/);
+  await page.click('#open-plan-help');
+  await page.text('#plan-help-status', /Quiero hablar sobre mi fecha de pago/);
 });

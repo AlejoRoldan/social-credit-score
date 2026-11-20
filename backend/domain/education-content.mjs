@@ -1,6 +1,6 @@
 export const educationModule = Object.freeze({
   id: 'capital-e-intereses',
-  version: 1,
+  version: 2,
   rubricVersion: 1,
   policyVersion: 1,
   bonus: 2,
@@ -11,3 +11,17 @@ export const educationModule = Object.freeze({
     Object.freeze({ id: 'b', principal: 420_000, payment: 80_000, interest: 50_000, available: 55_000, other: 35_000, newPayment: 45_000 }),
   ]),
 });
+
+export function educationCaseForAttempt(number) {
+  const { cases } = educationModule;
+  if (number <= cases.length) return cases[number - 1];
+
+  const template = cases.at(-1);
+  const retry = number - cases.length;
+  return {
+    ...template,
+    id: `retry-${number}`,
+    principal: template.principal + retry * 10_000,
+    newPayment: template.newPayment + retry * 5_000,
+  };
+}
