@@ -65,6 +65,8 @@ const planForm = byId('payment-plan-form');
 const planInputs = planForm.querySelectorAll('input');
 const planViews = ['payment-plan', 'plan-comparison', 'plan-help', 'plan-orientation'];
 const comparisonScenario = byId('plan-comparison-scenario');
+const openPlanComparison = byId('open-plan-comparison');
+const planActions = openPlanComparison.parentElement;
 const planHelpForm = byId('plan-help-form');
 const planHelpOpeners = [...document.querySelectorAll('[data-plan-help]')];
 const orientationOpeners = [...document.querySelectorAll('[data-plan-orientation]')];
@@ -397,6 +399,11 @@ function renderPaymentPlan(plan) {
   byId('plan-storage-note').hidden = !plan || !hasStorageWarning('plan-storage-note');
   byId('plan-essential-row').hidden = !plan?.essentialShortfallCop;
   const comparison = plan && getPlanComparison(state, profile.value);
+  const prioritizeHelp = comparison?.alternative === null;
+  openPlanComparison.classList.toggle('secondary', prioritizeHelp);
+  defaultPlanHelpOpener.classList.toggle('secondary', !prioritizeHelp);
+  const primaryAction = prioritizeHelp ? defaultPlanHelpOpener : openPlanComparison;
+  if (planActions.firstElementChild !== primaryAction) planActions.prepend(primaryAction);
   const agreed = comparison?.active === 'alternative' ? comparison.alternative.payments[0] : null;
   const date = agreed?.date ?? plan?.values.installmentDate;
   const installment = agreed?.amountCop ?? plan?.values.installmentCop;
@@ -1090,7 +1097,7 @@ comparisonScenario.addEventListener('change', () => {
 });
 byId('back-from-plan-comparison').addEventListener('click', () => {
   show('payment-plan', false);
-  byId('open-plan-comparison').focus();
+  planActions.firstElementChild.focus();
 });
 for (const button of planHelpOpeners) {
   button.addEventListener('click', () => {

@@ -775,12 +775,21 @@ test('Diana compara costos y ve el calendario vigente de cada escenario', async 
   await notVisible(page, '#plan-alternative');
   await page.click('#back-from-plan-comparison');
   await page.text('#plan-due-amount', /\$50\.000/);
+  const planActions = () => page.evaluate(`Array.from(document.querySelectorAll('#payment-plan > .actions button'),
+    ({ id, classList }) => [id, classList.contains('secondary')])`);
+  const helpFirst = [['open-plan-help', false], ['open-plan-comparison', true], ['open-plan-orientation', true]];
+  assert.equal(await page.evaluate('document.activeElement.id'), 'open-plan-help');
+  assert.deepEqual(await planActions(), helpFirst);
+  await page.reload();
+  assert.deepEqual(await planActions(), helpFirst);
   await page.click('#open-plan-comparison');
   await page.select('#plan-comparison-scenario', 'agreed');
   await page.text('#plan-comparison-status', /Prórroga acordada.*está vigente/);
   await page.reload();
   await page.text('#plan-comparison-status', /Prórroga acordada/);
   await page.click('#back-from-plan-comparison');
+  assert.equal(await page.evaluate('document.activeElement.id'), 'open-plan-comparison');
+  assert.deepEqual(await planActions(), [['open-plan-comparison', false], ['open-plan-help', true], ['open-plan-orientation', true]]);
   await page.text('#plan-schedule-status', /Primera cuota de la prórroga acordada/);
   await page.text('#plan-due-amount', /\$30\.000/);
   await page.text('#plan-due-date', /20 de noviembre/);
