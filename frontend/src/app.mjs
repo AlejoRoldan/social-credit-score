@@ -15,7 +15,13 @@ import {
   canViewProject, confirmProjectTransfer, getProjectCase, submitProjectProposal, validateProjectProposal, voteOnProject,
 } from '../../backend/domain/project-state.mjs';
 import { getCircleScore, getOwnScore, scoreComparisonExamples } from '../../backend/domain/score-state.mjs';
-import { getLoanAccount, helpReasons, payNextInstallment, requestLoanHelp } from '../../backend/domain/loan-account-state.mjs';
+import { educationModule } from '../../backend/domain/education-content.mjs';
+import { getEducationProgress, submitEducationAttempt } from '../../backend/domain/education-state.mjs';
+import { getLoanAccount, getPlanHelp, helpReasons, payNextInstallment, requestLoanHelp, requestPlanHelp } from '../../backend/domain/loan-account-state.mjs';
+import {
+  availableForPlanDate, getPaymentPlan, maxPlanAmountCop, paymentPlanStartDate, updatePaymentPlan,
+} from '../../backend/domain/payment-plan-state.mjs';
+import { getPlanComparison, planComparisonScenarios, selectPlanComparisonScenario } from '../../backend/domain/plan-comparison-state.mjs';
 
 const circleExercise = new URLSearchParams(location.search).get('ejercicio') === 'circulo';
 const sessionSuffix = circleExercise ? '-ejercicio-circulo' : '';
@@ -45,6 +51,7 @@ const votingStatus = {
 };
 
 const byId = (id) => document.getElementById(id);
+const unsavedStorageWarnings = new WeakMap();
 const profile = byId('profile');
 const demoControls = profile.closest('.demo-controls');
 const draftForm = byId('draft-form');
@@ -53,9 +60,18 @@ const inviteForm = byId('invite-form');
 const invitee = byId('invitee');
 const responseForm = byId('response-form');
 const navigation = byId('navigation');
+const planEditor = byId('plan-editor');
+const planForm = byId('payment-plan-form');
+const planInputs = planForm.querySelectorAll('input');
+const planViews = ['payment-plan', 'plan-comparison', 'plan-help', 'plan-orientation'];
+const comparisonScenario = byId('plan-comparison-scenario');
+const planHelpForm = byId('plan-help-form');
+let returnFromPlanHelp = 'open-plan-help';
+let returnFromOrientation = 'open-plan-orientation';
 const installmentReminder = byId('installment-reminder');
 const paymentDialog = byId('payment-dialog');
 const helpForm = byId('account-help-form');
+const educationForm = byId('education-form');
 const sections = document.querySelectorAll('main section');
 const applicantViews = ['needs', 'circle', 'review', 'success'];
 const guidedVoter = installmentSupporters.at(-1);
@@ -85,14 +101,29 @@ function loadSession(key, fallback, isValid) {
 function saveSession(key, value) {
   try {
     sessionStorage.setItem(key, JSON.stringify(value));
+    if (key === (guided ? presentationKey : storageKey)) {
+      const warnings = unsavedStorageWarnings.get(state);
+      if (warnings) for (const id of warnings.values()) byId(id).hidden = true;
+      unsavedStorageWarnings.delete(state);
+    }
+    return true;
   } catch {
-    // The demo still works in memory when storage is unavailable.
+    return false;
   }
 }
 
 function saveState() {
-  if (guided) saveSession(presentationKey, presentation);
-  else saveSession(storageKey, normalState);
+  return guided ? saveSession(presentationKey, presentation) : saveSession(storageKey, normalState);
+}
+
+function rememberStorageWarnings(...ids) {
+  const warnings = unsavedStorageWarnings.get(state) ?? new Map();
+  for (const id of ids) warnings.set(`${profile.value}:${id}`, id);
+  unsavedStorageWarnings.set(state, warnings);
+}
+
+function hasStorageWarning(id) {
+  return unsavedStorageWarnings.get(state)?.has(`${profile.value}:${id}`) ?? false;
 }
 
 function saveNavigation() {
@@ -341,6 +372,114 @@ function renderApplicantStatus() {
     : `${comparison} La tasa supera el límite por ${percentagePoints.format(excess)} puntos porcentuales.`;
 }
 
+function fillPaymentPlanForm(values) {
+  planForm.reset();
+  byId('plan-error').hidden = true;
+  if (!values) return;
+  for (const input of planInputs) {
+    if (input.type === 'checkbox') input.checked = values[input.name];
+    else input.value = values[input.name];
+  }
+}
+
+function renderPaymentPlan(plan) {
+  fillPaymentPlanForm(plan?.values);
+  byId('plan-storage-note').hidden = !plan || !hasStorageWarning('plan-storage-note');
+  byId('plan-essential-row').hidden = !plan?.essentialShortfallCop;
+  const comparison = plan && getPlanComparison(state, profile.value);
+  const agreed = comparison?.active === 'alternative' ? comparison.alternative.payments[0] : null;
+  const date = agreed?.date ?? plan?.values.installmentDate;
+  const installment = agreed?.amountCop ?? plan?.values.installmentCop;
+  const available = agreed ? availableForPlanDate(plan.values, date) : plan?.availableCop;
+  const gap = plan && Math.max(0, installment - available);
+  const scheduleStatus = byId('plan-schedule-status');
+  scheduleStatus.textContent = agreed ? 'Primera cuota de la prórroga acordada.'
+    : comparison?.active === null ? 'Esta cuota es la referencia de la oferta nueva.' : '';
+  scheduleStatus.hidden = !scheduleStatus.textContent;
+  const entries = {
+    'plan-installment-gap': plan && money(gap),
+    'plan-available': plan && money(available),
+    'plan-essentials': plan && money(plan.essentialsCop),
+    'plan-essential-gap': plan && money(plan.essentialShortfallCop),
+    'plan-due-amount': plan && money(installment),
+    'plan-due-date': plan && reminderDate.format(new Date(date)),
+  };
+  for (const [id, value] of Object.entries(entries)) byId(id).textContent = value ?? '';
+  if (!plan) {
+    planEditor.open = false;
+    byId('plan-income-status').textContent = '';
+    return;
+  }
+
+  const incomeDate = reminderDate.format(new Date(plan.values.incomeDate));
+  const income = `El ingreso de ${money(plan.values.incomeCop)} del ${incomeDate}`;
+  const statusText = {
+    uncertain: 'está por confirmar. El cálculo usa solo dinero confirmado.',
+    'after-due': 'está confirmado y llega después del vencimiento. Queda fuera de este cálculo.',
+    included: 'está confirmado y se incluye en el cálculo.',
+  };
+  const incomeStatus = agreed && plan.values.incomeConfirmed && plan.values.incomeDate <= date ? 'included' : plan.incomeStatus;
+  byId('plan-income-status').textContent = `${income} ${statusText[incomeStatus]}`;
+}
+
+function renderPlanTerms(list, terms) {
+  list.replaceChildren();
+  if (!terms) return;
+  const { payments, interestCop, totalCop } = terms;
+  const dueDates = payments.map(({ date }) => reminderDate.format(new Date(date)));
+  const amounts = [...new Set(payments.map(({ amountCop }) => amountCop))].map(money);
+  list.replaceChildren(...factRows([
+    ['Cuota', amounts.join(' y ')],
+    ['Frecuencia', payments.length === 1 ? 'Un pago' : 'Dos pagos semanales'],
+    ['Interés total', money(interestCop)],
+    ['Total a devolver', money(totalCop)],
+    ['Fechas de pago', dueDates.join(' y ')],
+    ['Último vencimiento', dueDates.at(-1)],
+  ]));
+}
+
+function renderPlanComparison(comparison) {
+  const { scenario, active, original, alternative } = comparison ?? {};
+  comparisonScenario.value = scenario ?? 'pending';
+  renderPlanTerms(byId('plan-original-terms'), original);
+  renderPlanTerms(byId('plan-alternative-terms'), alternative);
+  byId('plan-alternative').hidden = !alternative;
+  byId('plan-comparison-storage-note').hidden = !comparison || !hasStorageWarning('plan-comparison-storage-note');
+  const status = byId('plan-comparison-status');
+  const difference = byId('plan-comparison-difference');
+  const shortfall = byId('plan-comparison-shortfall');
+  difference.hidden = !alternative;
+  shortfall.hidden = !comparison;
+  if (!comparison) {
+    status.textContent = difference.textContent = shortfall.textContent = '';
+    return;
+  }
+  status.textContent = !alternative ? active === null ? 'La oferta nueva carece de un plazo alternativo. Aún no hay un calendario vigente.'
+    : 'No hay un plazo alternativo disponible. Siguen vigentes las condiciones originales.'
+    : active === null ? 'Oferta nueva. Ninguna de estas opciones está vigente.'
+      : active === 'alternative' ? 'Prórroga acordada. El calendario del plazo mayor está vigente en este caso.'
+        : 'Solicitud de prórroga pendiente. El calendario original sigue vigente.';
+  if (alternative) {
+    const change = alternative.totalCop - original.totalCop;
+    const reduction = original.payments[0].amountCop - alternative.payments[0].amountCop;
+    difference.textContent = `La primera cuota baja ${money(reduction)}. ${change ? `El total aumenta ${money(change)}.` : 'El total a devolver es el mismo.'}`;
+  } else difference.textContent = '';
+  const describe = (label, terms) => terms.shortfallCop
+    ? `${label}: faltan hasta ${money(terms.shortfallCop)} en las fechas de pago.`
+    : `${label}: el presupuesto ingresado cubre los pagos.`;
+  shortfall.textContent = [describe('Condiciones originales', original), alternative && describe('Plazo mayor', alternative)].filter(Boolean).join(' ');
+}
+
+function renderPlanHelp(reason) {
+  planHelpForm.reset();
+  planHelpForm.hidden = Boolean(reason);
+  const status = byId('plan-help-status');
+  status.hidden = !reason;
+  status.textContent = reason ? `Solicitud de prueba registrada. Motivo: ${reason}.` : '';
+  byId('plan-help-storage-note').hidden = !reason || !hasStorageWarning('plan-help-storage-note');
+  byId('back-from-plan-help').textContent = reason ? 'Volver' : 'Cancelar y volver';
+}
+
 function renderLoanAccount(account) {
   const { next, outstandingCop, paidCount, installments, helpReason } = account;
   byId('account-next-label').textContent = next ? 'Próxima cuota' : 'Crédito pagado';
@@ -374,13 +513,37 @@ function renderLoanAccount(account) {
   byId('account-help').hidden = !next && !helpReason;
 }
 
-function renderOwnScore(score) {
+function renderOwnScore(score, educationBonus = 0) {
   byId('own-score-value').textContent = score ? `${score.value} de 100` : '';
   byId('own-score-result').hidden = !score;
   byId('own-score-insufficient').hidden = Boolean(score);
   byId('own-score-compliance').textContent = score?.history.compliance ?? '';
   byId('own-score-commitments').textContent = score?.history.commitments ?? '';
   byId('own-score-membership').textContent = score?.history.membership ?? '';
+  byId('own-education-bonus').hidden = educationBonus === 0;
+  byId('own-education-bonus').textContent = educationBonus ? `+${educationBonus} por comprender capital e intereses · Bono educativo simulado` : '';
+  byId('own-education-storage-note').hidden = !educationBonus || !hasStorageWarning('own-education-storage-note');
+}
+
+function renderEducation({ number, attemptId, example, last, bonus }, retry = false) {
+  const { principal, payment, interest } = educationModule.practice;
+  byId('education-practice').textContent = `Diana debe ${money(principal)} de capital y paga ${money(payment)}. Los ${money(interest)} van a intereses y ${money(payment - interest)} a capital. Quedan ${money(principal - (payment - interest))} de capital.`;
+  educationForm.reset();
+  educationForm.dataset.attemptId = attemptId;
+  const showResult = Boolean(last && !retry);
+  educationForm.hidden = showResult;
+  byId('education-result').hidden = !showResult;
+  byId('education-storage-note').hidden = !hasStorageWarning('education-storage-note');
+  byId('education-retry').hidden = bonus > 0;
+  byId('education-result-title').textContent = showResult ? bonus > 0 ? `Ganaste +${bonus} puntos educativos` : 'Revisa tus respuestas' : '';
+  byId('education-result-attempt').textContent = showResult ? last.number === 1 ? 'Primer intento' : `Reintento ${last.number - 1}` : '';
+  byId('education-capital-feedback').textContent = showResult && !last.capitalCorrect
+    ? 'Resta del saldo solo la parte del pago que fue a capital. Puedes calcularla restando los intereses al pago.' : '';
+  byId('education-cash-feedback').textContent = showResult && !last.cashCorrect
+    ? 'Suma los pagos previstos y la nueva cuota. Compara ese total con el dinero disponible después de lo esencial.' : '';
+  byId('education-attempt-number').textContent = number === 1 ? 'Primer intento' : `Reintento ${number - 1}`;
+  byId('education-capital-case').textContent = `Diana debía ${money(example.principal)} de capital. Pagó ${money(example.payment)}. Del pago, ${money(example.interest)} fueron a intereses y el resto, a capital.`;
+  byId('education-cash-case').textContent = `Después de reservar comida y transporte, Diana tiene ${money(example.available)} y otros pagos por ${money(example.other)} esa semana. Un nuevo préstamo cubriría un vencimiento anterior y añadiría una cuota de ${money(example.newPayment)} esa semana. Los otros pagos siguen pendientes.`;
 }
 
 function renderScoreComparison() {
@@ -676,16 +839,37 @@ function show(requestedView, moveFocus = true) {
   const installmentAllowed = !guided || Boolean(getRecordedDisbursement(state));
   const account = getLoanAccount(state, profile.value);
   let view = requestedView;
+  if (!isApplicant && planViews.includes(view)) view = 'inbox';
 
   if (view !== 'score') renderOwnScore(null);
+  if (view !== 'education') {
+    educationForm.reset();
+    delete educationForm.dataset.attemptId;
+    byId('education-result').hidden = true;
+    byId('education-storage-note').hidden = true;
+    for (const id of ['education-result-title', 'education-result-attempt', 'education-capital-feedback', 'education-cash-feedback',
+      'education-attempt-number', 'education-capital-case', 'education-cash-case']) {
+      byId(id).textContent = '';
+    }
+  }
   if (!financeAllowed) renderFinance(null, null);
 
   if (view === 'account' && account) {
     renderLoanAccount(account);
+  } else if (view === 'payment-plan' && isApplicant) {
+    renderPaymentPlan(getPaymentPlan(state, profile.value));
+  } else if (view === 'plan-comparison') {
+    renderPlanComparison(getPlanComparison(state, profile.value));
+  } else if (view === 'plan-help') {
+    renderPlanHelp(getPlanHelp(state, profile.value));
+  } else if (view === 'plan-orientation') {
+    // The standalone orientation screen has no form or state.
   } else if (view === 'home') {
     byId('home-application').textContent = state.sent ? 'Ver mi solicitud' : 'Simular un préstamo';
   } else if (view === 'score') {
-    renderOwnScore(getOwnScore(profile.value));
+    renderOwnScore(getOwnScore(profile.value), getEducationProgress(state, profile.value)?.bonus);
+  } else if (view === 'education') {
+    renderEducation(getEducationProgress(state, profile.value));
   } else if (view === 'project') {
     renderProject();
   } else if (view === 'installment' && installmentAllowed) {
@@ -722,6 +906,9 @@ function show(requestedView, moveFocus = true) {
     if (view === 'sheet') renderSheet(notice);
   }
 
+  if (view !== 'payment-plan' && currentView === 'payment-plan') renderPaymentPlan(null);
+  if (view !== 'plan-comparison' && currentView === 'plan-comparison') renderPlanComparison(null);
+  if (view !== 'plan-help' && currentView === 'plan-help') renderPlanHelp(null);
   if (view !== 'account' && currentView === 'account') {
     reviewedPayment = null;
     paymentDialog.close();
@@ -734,15 +921,16 @@ function show(requestedView, moveFocus = true) {
   renderInstallmentReminder(view === 'success' ? getInstallmentReminder(state, profile.value) : null, account);
   navigation.hidden = false;
   byId('guided-vote').hidden = installmentAllowed || (profile.value === guidedVoter && view === 'sheet');
-  const navView = view === 'project' && financeAllowed ? 'finance'
+  const navView = view === 'education' ? 'score' : view === 'project' && financeAllowed ? 'finance'
     : ['home', 'account', 'finance', 'installment', 'project', 'score'].includes(view) ? view
       : isApplicant ? 'application' : view === 'sheet' ? 'inbox' : view;
   for (const button of navigation.querySelectorAll('[data-go]')) {
     const destination = button.dataset.go;
-    button.hidden = destination === 'account' ? !account : destination === 'finance' ? !financeAllowed : destination === 'installment' ? !installmentAllowed
+    button.hidden = destination === 'payment-plan' ? !isApplicant
+      : destination === 'account' ? !account : destination === 'finance' ? !financeAllowed : destination === 'installment' ? !installmentAllowed
       : destination === 'project' ? financeAllowed || !canViewProject(profile.value)
         : !['score', 'home'].includes(destination) && (destination === 'application') !== isApplicant;
-    if (destination === navView) button.setAttribute('aria-current', 'page');
+    if (destination === (planViews.includes(view) ? 'payment-plan' : navView)) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
   }
   for (const section of sections) section.hidden = section.id !== view;
@@ -838,7 +1026,7 @@ function showProfile(moveFocus, destination) {
   selectedVersion = null;
   const returnToVote = guided && profile.value === guidedVoter && !getRecordedDisbursement(state);
   if (returnToVote) selectedVersion = getInbox(state, guidedVoter).find(({ isCurrent }) => isCurrent)?.version ?? null;
-  const view = destination ?? (['project', 'score', 'finance'].includes(currentView) ? currentView : returnToVote ? 'sheet'
+  const view = destination ?? (currentView === 'education' ? 'score' : ['project', 'score', 'finance'].includes(currentView) ? currentView : returnToVote ? 'sheet'
     : currentView === 'installment' ? currentView : profile.value === applicant.id ? applicantView : state.sent ? 'inbox' : 'support');
   show(view, moveFocus);
   const name = profile.selectedOptions[0].textContent;
@@ -857,6 +1045,70 @@ profile.addEventListener('change', () => {
 });
 byId('home-application').addEventListener('click', () => switchProfile(applicant.id, 'application'));
 byId('home-support').addEventListener('click', () => switchProfile(guidedVoter, 'support'));
+
+byId('education-retry').addEventListener('click', () => {
+  const progress = getEducationProgress(state, profile.value);
+  if (currentView !== 'education' || !progress?.last || progress.bonus) return;
+  renderEducation(progress, true);
+  byId('education-form-title').focus();
+});
+educationForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  if (currentView !== 'education' || educationForm.hidden || !educationForm.reportValidity()) return;
+  const fields = new FormData(educationForm);
+  const result = submitEducationAttempt(state, profile.value, educationForm.dataset.attemptId, {
+    capital: Number(fields.get('capital')),
+    capitalReason: fields.get('capitalReason'),
+    shortfall: Number(fields.get('shortfall')),
+    cashReason: fields.get('cashReason'),
+  });
+  if (!result) return;
+  if (!saveState()) rememberStorageWarnings('education-storage-note', 'own-education-storage-note');
+  renderEducation(getEducationProgress(state, profile.value));
+  byId('education-result-title').focus();
+});
+
+comparisonScenario.append(...Object.entries(planComparisonScenarios).map(([id, label]) => new Option(label, id)));
+comparisonScenario.addEventListener('change', () => {
+  if (currentView !== 'plan-comparison' || !selectPlanComparisonScenario(state, profile.value, comparisonScenario.value)) return;
+  if (!saveState()) rememberStorageWarnings('plan-comparison-storage-note');
+  renderPlanComparison(getPlanComparison(state, profile.value));
+});
+byId('back-from-plan-comparison').addEventListener('click', () => {
+  show('payment-plan', false);
+  byId('open-plan-comparison').focus();
+});
+for (const button of document.querySelectorAll('[data-plan-help]')) {
+  button.addEventListener('click', () => {
+    returnFromPlanHelp = button.id;
+    show('plan-help');
+  });
+}
+for (const button of document.querySelectorAll('[data-plan-orientation]')) {
+  button.addEventListener('click', () => {
+    returnFromOrientation = button.id;
+    show('plan-orientation');
+  });
+}
+byId('back-from-plan-help').addEventListener('click', () => {
+  const button = byId(returnFromPlanHelp);
+  show(button.dataset.planHelp, false);
+  button.focus();
+});
+byId('back-from-plan-orientation').addEventListener('click', () => {
+  const button = byId(returnFromOrientation);
+  show(button.dataset.planOrientation, false);
+  button.focus();
+});
+const planHelpReason = byId('plan-help-reason');
+planHelpReason.append(...helpReasons.map((reason) => new Option(reason, reason)));
+planHelpForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  if (currentView !== 'plan-help' || !requestPlanHelp(state, profile.value, planHelpReason.value)) return;
+  if (!saveState()) rememberStorageWarnings('plan-help-storage-note');
+  renderPlanHelp(getPlanHelp(state, profile.value));
+  byId('plan-help-status').focus();
+});
 
 const helpReasonSelect = byId('account-help-reason');
 helpReasonSelect.append(...helpReasons.map((reason) => new Option(reason, reason)));
@@ -981,6 +1233,37 @@ byId('contribution-actions').addEventListener('click', (event) => {
   saveState();
   show('installment');
   announce(byId('installment-next-hint').textContent);
+});
+
+byId('plan-start-date').textContent = `Fecha de inicio del ejemplo: ${reminderDate.format(new Date(paymentPlanStartDate))}.`;
+for (const input of planInputs) {
+  if (input.type === 'number') input.max = maxPlanAmountCop;
+  if (input.type === 'date') input.min = paymentPlanStartDate;
+}
+planEditor.addEventListener('toggle', () => {
+  if (!planEditor.open && currentView === 'payment-plan') fillPaymentPlanForm(getPaymentPlan(state, profile.value)?.values);
+});
+byId('plan-cancel').addEventListener('click', () => {
+  planEditor.open = false;
+  fillPaymentPlanForm(getPaymentPlan(state, profile.value)?.values);
+  planEditor.querySelector('summary').focus();
+});
+planForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  if (currentView !== 'payment-plan' || !planEditor.open) return;
+  const values = Object.fromEntries([...planInputs].map((input) => {
+    if (input.type === 'checkbox') return [input.name, input.checked];
+    return [input.name, input.type === 'number' ? input.valueAsNumber : input.value];
+  }));
+  if (!updatePaymentPlan(state, profile.value, values)) {
+    byId('plan-error').hidden = false;
+    return;
+  }
+  if (!saveState()) rememberStorageWarnings('plan-storage-note');
+  planEditor.open = false;
+  renderPaymentPlan(getPaymentPlan(state, profile.value));
+  byId('plan-result-title').focus();
+  announce(`Faltante para la cuota: ${byId('plan-installment-gap').textContent}.`);
 });
 
 for (const button of document.querySelectorAll('[data-go]')) {

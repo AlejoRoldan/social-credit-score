@@ -1,4 +1,4 @@
-import { getApplicationStatus, getInstallmentReminder } from './demo-state.mjs';
+import { applicant, getApplicationStatus, getInstallmentReminder } from './demo-state.mjs';
 
 export const helpReasons = [
   'Bajaron mis ingresos o ventas',
@@ -56,6 +56,16 @@ export function requestLoanHelp(state, profileId, reason) {
   if (!account?.next || account.helpReason || !helpReasons.includes(reason)) return false;
 
   saveActivity(state, account, { helpReason: reason });
+  return true;
+}
+
+export function getPlanHelp(state, profileId) {
+  return profileId === applicant.id && helpReasons.includes(state.planHelpReason) ? state.planHelpReason : null;
+}
+
+export function requestPlanHelp(state, profileId, reason) {
+  if (profileId !== applicant.id || getPlanHelp(state, profileId) || !helpReasons.includes(reason)) return false;
+  state.planHelpReason = reason;
   return true;
 }
 

@@ -14,11 +14,13 @@ const entryPoints = new Map([
   ['/src/app.mjs', 'frontend/src/app.mjs'],
 ]);
 
+const educationContent = 'backend/domain/education-content.mjs';
+
 export async function serve(port = 8000) {
   const server = createServer(async (request, response) => {
     const [path] = request.url.split('?');
     const file = entryPoints.get(path) ?? path.slice(1);
-    if (!/^(?:frontend\/(?:index\.html|styles\.css|src\/app\.mjs)|design-system\/tokens\.css|backend\/domain\/[a-z-]+-state\.mjs)$/.test(file)) {
+    if (file !== educationContent && !/^(?:frontend\/(?:index\.html|styles\.css|src\/app\.mjs)|design-system\/tokens\.css|backend\/domain\/[a-z-]+-state\.mjs)$/.test(file)) {
       response.writeHead(404).end();
       return;
     }

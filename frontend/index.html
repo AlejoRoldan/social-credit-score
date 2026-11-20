@@ -39,6 +39,7 @@
       <button type="button" class="secondary" data-go="home">Inicio</button>
       <button type="button" class="secondary" data-go="application">Mi solicitud</button>
       <button type="button" class="secondary" data-go="account" hidden>Mi crédito</button>
+      <button type="button" class="secondary" data-go="payment-plan" hidden>Plan de pago</button>
       <button type="button" class="secondary" data-go="support">Mi respaldo</button>
       <button type="button" class="secondary" data-go="inbox">Bandeja</button>
       <button type="button" class="secondary" data-go="score">Mi puntaje</button>
@@ -256,6 +257,122 @@
       </div>
     </section>
 
+    <section class="card" id="payment-plan" aria-labelledby="payment-plan-title" hidden>
+      <h1 id="payment-plan-title" tabindex="-1">Plan hasta el próximo pago</h1>
+      <p>Ve qué puedes cubrir después de apartar lo esencial. Usa solo cifras de prueba.</p>
+      <div class="payment-plan-layout">
+        <div class="callout payment-plan-result">
+          <h2 id="plan-result-title" tabindex="-1">Tu plan al vencimiento</h2>
+          <p>Te falta para la cuota <strong id="plan-installment-gap"></strong></p>
+          <dl class="payment-plan-facts">
+            <div><dt>Disponible para la cuota</dt><dd id="plan-available"></dd></div>
+            <div><dt>Necesitas para comida y transporte</dt><dd id="plan-essentials"></dd></div>
+            <div id="plan-essential-row" hidden><dt>Te falta para lo esencial antes del próximo ingreso</dt><dd id="plan-essential-gap"></dd></div>
+          </dl>
+          <p class="callout callout-attention" id="plan-income-status"></p>
+        </div>
+        <div class="payment-plan-details">
+          <div class="callout">
+            <h2>Próxima cuota de ejemplo</h2>
+            <p id="plan-schedule-status" hidden></p>
+            <dl class="payment-plan-facts">
+              <div><dt>Monto</dt><dd id="plan-due-amount"></dd></div>
+              <div><dt>Vencimiento</dt><dd id="plan-due-date"></dd></div>
+            </dl>
+          </div>
+          <details class="payment-plan-editor" id="plan-editor">
+            <summary>Editar mi plan</summary>
+            <form id="payment-plan-form">
+              <p id="plan-start-date"></p>
+              <fieldset>
+                <legend>Dinero y gastos esenciales en COP</legend>
+                <label for="plan-cash">Efectivo de hoy</label>
+                <input id="plan-cash" name="cashCop" type="number" inputmode="numeric" min="0" step="1" required>
+                <label for="plan-food">Comida hasta el próximo ingreso</label>
+                <input id="plan-food" name="foodCop" type="number" inputmode="numeric" min="0" step="1" required>
+                <label for="plan-transport">Transporte hasta el próximo ingreso</label>
+                <input id="plan-transport" name="transportCop" type="number" inputmode="numeric" min="0" step="1" required>
+              </fieldset>
+              <fieldset>
+                <legend>Próximo ingreso</legend>
+                <label for="plan-income">Monto en COP</label>
+                <input id="plan-income" name="incomeCop" type="number" inputmode="numeric" min="0" step="1" required>
+                <label for="plan-income-date">Fecha del ingreso</label>
+                <input id="plan-income-date" name="incomeDate" type="date" required>
+                <label class="choice"><input name="incomeConfirmed" type="checkbox">El ingreso está confirmado</label>
+              </fieldset>
+              <fieldset>
+                <legend>Cuota original del ejercicio</legend>
+                <label for="plan-installment">Monto en COP</label>
+                <input id="plan-installment" name="installmentCop" type="number" inputmode="numeric" min="1" step="1" required>
+                <label for="plan-installment-date">Fecha de vencimiento</label>
+                <input id="plan-installment-date" name="installmentDate" type="date" required>
+              </fieldset>
+              <p id="plan-error" class="callout callout-attention" role="alert" hidden>Revisa las fechas y escribe los montos en pesos enteros.</p>
+              <div class="actions">
+                <button type="submit">Actualizar mi plan</button>
+                <button type="button" id="plan-cancel" class="secondary">Cancelar</button>
+              </div>
+            </form>
+          </details>
+        </div>
+      </div>
+      <p id="plan-storage-note" class="callout callout-attention" hidden>El plan se actualizó en esta vista. Al recargar, podrías perder los cambios.</p>
+      <div class="actions">
+        <button type="button" id="open-plan-comparison" data-go="plan-comparison">Comparar un plazo mayor</button>
+        <button type="button" id="open-plan-help" class="secondary" data-plan-help="payment-plan">Ayuda privada</button>
+        <button type="button" id="open-plan-orientation" class="secondary" data-plan-orientation="payment-plan">Necesito orientación por amenazas</button>
+      </div>
+    </section>
+
+    <section class="card" id="plan-comparison" aria-labelledby="plan-comparison-title" hidden>
+      <h1 id="plan-comparison-title" tabindex="-1">Comparar un plazo mayor</h1>
+      <p>Las condiciones corresponden a un caso de prueba. El cálculo usa el efectivo y los gastos esenciales de tu plan en cada fecha de pago.</p>
+      <label for="plan-comparison-scenario">Escenario de prueba</label>
+      <select id="plan-comparison-scenario"></select>
+      <p id="plan-comparison-status" class="callout" role="status"></p>
+      <div class="payment-plan-layout">
+        <div class="callout">
+          <h2>Condiciones originales</h2>
+          <dl class="facts" id="plan-original-terms"></dl>
+        </div>
+        <div class="callout" id="plan-alternative" hidden>
+          <h2>Plazo mayor</h2>
+          <dl class="facts" id="plan-alternative-terms"></dl>
+        </div>
+      </div>
+      <p id="plan-comparison-difference" hidden></p>
+      <p id="plan-comparison-shortfall" class="callout callout-attention" hidden></p>
+      <p id="plan-comparison-storage-note" class="callout callout-attention" role="status" hidden>Al recargar, podrías perder el escenario seleccionado.</p>
+      <div class="actions">
+        <button type="button" class="secondary" id="back-from-plan-comparison">Volver al plan</button>
+        <button type="button" id="open-comparison-help" data-plan-help="plan-comparison">Ayuda privada</button>
+      </div>
+    </section>
+
+    <section class="card" id="plan-help" aria-labelledby="plan-help-title" hidden>
+      <h1 id="plan-help-title" tabindex="-1">Ayuda privada</h1>
+      <p>La solicitud de prueba queda en la vista de Diana. Esta demo no contacta a nadie.</p>
+      <p class="callout" id="plan-help-status" role="status" tabindex="-1" hidden></p>
+      <p id="plan-help-storage-note" class="callout callout-attention" role="status" hidden>Al recargar, podrías perder esta solicitud de prueba.</p>
+      <form id="plan-help-form">
+        <label for="plan-help-reason">¿Qué necesitas conversar?</label>
+        <select id="plan-help-reason" required><option value="">Elige un motivo</option></select>
+        <button type="submit">Registrar solicitud de prueba</button>
+      </form>
+      <div class="actions">
+        <button type="button" class="secondary" id="back-from-plan-help">Volver</button>
+        <button type="button" class="secondary" id="open-help-orientation" data-plan-orientation="plan-help">Necesito orientación por amenazas</button>
+      </div>
+    </section>
+
+    <section class="card" id="plan-orientation" aria-labelledby="plan-orientation-title" hidden>
+      <h1 id="plan-orientation-title" tabindex="-1">Orientación ante amenazas</h1>
+      <p class="callout callout-attention">Ruta de prueba. Aquí no se piden datos ni se envían avisos al círculo.</p>
+      <p>En un servicio real, este espacio indicaría quién puede orientarte de forma privada.</p>
+      <div class="actions"><button type="button" class="secondary" id="back-from-plan-orientation">Volver</button></div>
+    </section>
+
     <section class="card" id="installment" aria-labelledby="installment-title" hidden>
       <h1 id="installment-title" tabindex="-1">Cuota pendiente</h1>
       <p>Ejercicio de impago con datos de ejemplo.</p>
@@ -304,6 +421,13 @@
           <div><dt>Tiempo de vínculo</dt><dd id="own-score-membership"></dd></div>
         </dl>
       </div>
+      <div class="callout">
+        <h2>Aprender sobre intereses</h2>
+        <p>Practica cuánto capital queda después de un pago. Puedes solicitar crédito sin completar la lección.</p>
+        <p id="own-education-bonus" hidden></p>
+        <p id="own-education-storage-note" class="callout callout-attention" role="status" hidden>El bono sigue disponible en esta pestaña. Al recargar, podrías perderlo.</p>
+        <div class="actions"><button type="button" class="secondary" data-go="education">Abrir práctica</button></div>
+      </div>
       <details id="score-comparison">
         <summary>Comparar ejemplos</summary>
         <div class="score-content">
@@ -313,6 +437,50 @@
           <p>Los puntajes son ilustrativos. El crédito, el manejo de impagos y los giros se deciden con sus propias reglas.</p>
         </div>
       </details>
+    </section>
+
+    <section class="card" id="education" aria-labelledby="education-title" hidden>
+      <h1 id="education-title" tabindex="-1">Capital e intereses</h1>
+      <div class="callout">
+        <h2>Cuando pagas solo intereses</h2>
+        <p id="education-practice"></p>
+      </div>
+      <form id="education-form" aria-labelledby="education-form-title">
+        <h2 id="education-form-title" tabindex="-1">Resuelve un caso nuevo</h2>
+        <p id="education-attempt-number"></p>
+        <fieldset>
+          <legend>Capital pendiente</legend>
+          <p id="education-capital-case"></p>
+          <label for="education-capital">¿Cuánto capital queda en pesos colombianos?</label>
+          <input id="education-capital" name="capital" type="number" inputmode="numeric" min="0" step="1" required>
+          <div class="education-reasons" role="group" aria-labelledby="education-capital-reason">
+            <p id="education-capital-reason">¿Por qué queda ese saldo?</p>
+            <label class="choice"><input type="radio" name="capitalReason" value="payment" required>Todo pago reduce el capital por el monto pagado.</label>
+            <label class="choice"><input type="radio" name="capitalReason" value="principal">Solo la parte aplicada a capital reduce ese saldo.</label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Efecto de otro préstamo</legend>
+          <p id="education-cash-case"></p>
+          <label for="education-shortfall">¿Cuánto dinero faltaría esa semana en pesos colombianos?</label>
+          <input id="education-shortfall" name="shortfall" type="number" inputmode="numeric" min="0" step="1" required>
+          <div class="education-reasons" role="group" aria-labelledby="education-cash-reason">
+            <p id="education-cash-reason">¿Por qué cambia el presupuesto?</p>
+            <label class="choice"><input type="radio" name="cashReason" value="new-payment" required>El dinero del préstamo ya tiene destino y la cuota nueva se suma a los pagos de la semana.</label>
+            <label class="choice"><input type="radio" name="cashReason" value="free-cash">El dinero del préstamo queda libre para pagar la cuota nueva.</label>
+          </div>
+        </fieldset>
+        <button type="submit">Revisar mis respuestas</button>
+      </form>
+      <div id="education-result" class="callout" hidden>
+        <h2 id="education-result-title" tabindex="-1"></h2>
+        <p id="education-result-attempt"></p>
+        <p id="education-capital-feedback"></p>
+        <p id="education-cash-feedback"></p>
+        <button type="button" id="education-retry" class="secondary">Intentar con otro caso</button>
+      </div>
+      <p id="education-storage-note" class="callout callout-attention" role="status" hidden>El resultado sigue disponible en esta pestaña. Al recargar, podrías perderlo.</p>
+      <div class="actions"><button type="button" class="secondary" data-go="score">Volver a Mi puntaje</button></div>
     </section>
 
     <section class="card" id="finance" aria-labelledby="finance-title" hidden>
