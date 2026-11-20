@@ -816,3 +816,48 @@ test('Diana cancela o confirma ayuda privada y accede directamente a orientació
   await page.click('#open-plan-help');
   await page.text('#plan-help-status', /Quiero hablar sobre mi fecha de pago/);
 });
+
+test('V3 integrada: Diana conserva el bono, el plan, la prórroga y la ayuda en una sesión privada', async (t) => {
+  const page = await open(t, 320);
+  await navigate(page, 'score');
+  await page.click('#score [data-go="education"]');
+  await page.type('#education-capital', '285000');
+  await page.click('#education-form input[value="principal"]');
+  await page.type('#education-shortfall', '30000');
+  await page.click('#education-form input[value="new-payment"]');
+  await page.click('#education-form button[type="submit"]');
+  await page.text('#education-result-title', /\+2 puntos educativos/);
+
+  await navigate(page, 'payment-plan');
+  await page.click('#plan-editor summary');
+  await page.type('#plan-cash', '65000');
+  await page.click('#payment-plan-form button[type="submit"]');
+  await page.text('#plan-available', /\$20\.000/);
+  await page.text('#plan-installment-gap', /\$30\.000/);
+  await page.click('#open-plan-comparison');
+  await page.text('#plan-comparison-status', /pendiente.*original sigue vigente/);
+  await page.select('#plan-comparison-scenario', 'agreed');
+  await page.text('#plan-comparison-status', /Prórroga acordada.*está vigente/);
+
+  await page.click('#open-comparison-help');
+  await page.select('#plan-help-reason', 'Quiero hablar sobre mi fecha de pago');
+  await page.click('#plan-help-form button[type="submit"]');
+  await page.reload();
+  await page.text('#plan-help-status', /Solicitud de prueba registrada.*Quiero hablar sobre mi fecha de pago/);
+
+  await changeProfile(page, 'luz');
+  await notVisible(page, '#plan-help');
+  await notVisible(page, '#navigation [data-go="payment-plan"]');
+  assert.equal(await page.evaluate('document.querySelector("#plan-help-status").textContent'), '');
+  await navigate(page, 'score');
+  await notVisible(page, '#own-education-bonus');
+
+  await changeProfile(page, 'diana');
+  await page.text('#own-education-bonus', /^\+2 por comprender capital e intereses/);
+  await navigate(page, 'payment-plan');
+  await page.text('#plan-schedule-status', /Primera cuota de la prórroga acordada/);
+  await page.text('#plan-due-date', /20 de noviembre/);
+  await page.text('#plan-installment-gap', /\$10\.000/);
+  await page.click('#open-plan-help');
+  await page.text('#plan-help-status', /Quiero hablar sobre mi fecha de pago/);
+});
