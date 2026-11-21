@@ -1,0 +1,12 @@
+{
+  "name": "entrevecinos",
+  "private": true,
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node serve.mjs",
+    "test": "node --test",
+    "test:e2e": "node --test e2e/flows.mjs",
+    "test:pilot": "node --test e2e/pilot.mjs"
+  },
+  "dependencies": { "pg": "^8.16.3" }
+}

@@ -48,6 +48,14 @@ test('la práctica otorga un único bono privado al aprobar ambas competencias',
   const page = await open(t, 320);
   await navigate(page, 'score');
   await page.click('#score [data-go="education"]');
+  await page.click('#education-course summary');
+  await page.text('#education-course', /Entender mi cuota antes del próximo pago/);
+  await page.text('#education-course', /15\.000/);
+  await page.click('#education-course a');
+  await page.text('#education-attempt-number', /Primer intento/);
+  await page.click('#education [data-go="score"]');
+  await notVisible(page, '#own-education-bonus');
+  await page.click('#score [data-go="education"]');
   await page.text('#education-practice', /1\.000\.000.*200\.000.*\$0 COP a capital.*Quedan.*1\.000\.000/);
   assert.equal(await page.evaluate(`(() => {
     const root = document.documentElement;

@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: entrevecinos-staging
+    runtime: node
+    branch: pilot/entrevecinos-diez
+    region: virginia
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    autoDeployTrigger: checksPass
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: '24'
+      - key: ENTREVECINOS_ENV
+        value: staging
+      - key: STAGING_DATABASE_URL
+        sync: false
+      - key: PILOT_DATABASE_URL
+        sync: false
+      - key: SUPABASE_AUTH_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: PILOT_PRIVACY_NAME
+        sync: false
+      - key: PILOT_PRIVACY_EMAIL
+        sync: false

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Entrevecinos · Aviso de tratamiento de datos</title>
+  <link rel="stylesheet" href="/design-system/tokens.css">
+  <link rel="stylesheet" href="/pilot.css">
+  <script type="module">
+    const response = await fetch('/api/pilot/config');
+    if (response.ok) {
+      const { privacyContact } = await response.json();
+      if (privacyContact) {
+        document.getElementById('responsible').textContent = privacyContact.name;
+        const contact = document.getElementById('contact');
+        contact.href = `mailto:${privacyContact.email}`;
+        contact.textContent = privacyContact.email;
+      }
+    }
+  </script>
+</head>
+<body>
+  <header><div><strong>Entrevecinos</strong><span>Piloto por invitación</span></div></header>
+  <main>
+    <section>
+      <h1>Aviso de tratamiento de datos</h1>
+      <p>Versión del 21 de noviembre de 2026.</p>
+      <p><span id="responsible"></span> es el responsable de los datos del piloto. Para consultas sobre tus datos escribe a <a id="contact"></a>.</p>
+      <h2>Qué datos usamos y para qué</h2>
+      <p>Usamos tu correo para verificar el acceso, tu nombre visible para las invitaciones a círculos y las acciones que guardas para recuperar tu avance. Registramos la fecha y la versión de tu autorización. Usamos la calificación y el comentario opcional para identificar mejoras de Entrevecinos. La participación es voluntaria y está dirigida a personas adultas invitadas.</p>
+      <p>La persona que te invita a un círculo puede ver tu nombre visible y tu respuesta. Tu solicitud ficticia y tu feedback quedan reservados a tu cuenta y al equipo autorizado del piloto según la finalidad de la prueba. El servicio usa Supabase y Render, con infraestructura de pruebas en Estados Unidos, y Gmail para enviar códigos de acceso.</p>
+      <h2>Conservación y derechos</h2>
+      <p>El equipo conservará los datos del piloto durante la prueba y los eliminará dentro de los 30 días siguientes a su cierre. Los resultados agregados podrán conservarse para mejorar el producto. Puedes solicitar acceso, corrección, eliminación, prueba de tu autorización o el retiro de esa autorización escribiendo al correo anterior. También puedes presentar un reclamo ante la Superintendencia de Industria y Comercio.</p>
+      <p>Usa únicamente los montos y escenarios ficticios que ofrece el piloto. Evita incluir datos de otras personas o información financiera real en el comentario.</p>
+    </section>
+  </main>
+</body>
+</html>

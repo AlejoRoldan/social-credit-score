@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Entrevecinos · Piloto por invitación</title>
+  <link rel="stylesheet" href="/design-system/tokens.css">
+  <link rel="stylesheet" href="/pilot.css">
+  <script type="module" src="/pilot.mjs"></script>
+</head>
+<body>
+  <header><div><strong>Entrevecinos</strong><span>Piloto por invitación</span></div></header>
+  <main>
+    <p id="message" role="status" aria-live="polite"></p>
+    <section id="entry" hidden>
+      <h1>Participa en la prueba</h1>
+      <p>Podrás crear un círculo, ensayar una solicitud ficticia y contar qué te resultó fácil o difícil.</p>
+      <p><a id="privacy">Consulta el aviso de tratamiento de datos</a></p>
+      <form id="sign-in">
+        <label>Correo electrónico<input type="email" name="email" maxlength="254" autocomplete="email" required></label>
+        <div id="registration" hidden>
+          <label>Nombre visible para tu círculo<input type="text" name="name" autocomplete="given-name" maxlength="60" minlength="2"></label>
+          <label class="check"><input type="checkbox" name="consent"> Soy mayor de edad y autorizo el tratamiento de mis datos para este piloto según el aviso.</label>
+          <a href="/piloto">Ya me registré</a>
+        </div>
+        <label id="code-field" hidden>Código recibido por correo<input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" pattern="[0-9]{6,10}"></label>
+        <div class="buttons"><button id="auth-button">Enviar código</button><button type="button" id="resend" class="secondary" hidden>Volver a enviar</button></div>
+      </form>
+    </section>
+
+    <div id="workspace" hidden>
+      <div class="welcome"><h1>Hola, <span id="member-name"></span></h1><button id="logout" class="secondary">Cerrar sesión</button></div>
+      <section id="invitation-card" hidden>
+        <h2>Invitación a un círculo</h2>
+        <p id="circle-invitation"></p>
+        <p>Unirte te permite participar en el círculo. El respaldo de una solicitud se decide por separado.</p>
+        <div class="buttons" id="circle-decisions"><button id="accept">Aceptar</button><button id="decline" class="secondary">Declinar</button></div>
+      </section>
+      <section>
+        <h2>Mi círculo de confianza</h2>
+        <form id="circle-form">
+          <label>Nombre del círculo<input type="text" name="name" required minlength="2" maxlength="60" placeholder="Ej. Vecinos del barrio"></label>
+          <button>Crear círculo</button>
+        </form>
+        <div id="owned-circle" hidden>
+          <h3 id="circle-name"></h3>
+          <label>Enlace para otra persona del piloto<input id="circle-link" readonly></label>
+          <p>Comparte el enlace con alguien que ya se haya registrado en el piloto.</p>
+          <ul id="circle-responses"></ul>
+        </div>
+        <ul id="memberships"></ul>
+      </section>
+      <section>
+        <h2>Solicitud de prueba</h2>
+        <p>Usa un caso ficticio. Esta solicitud no genera un préstamo ni un desembolso.</p>
+        <form id="application-form">
+          <label>Escenario<select name="scenario"><option value="inventario">Comprar inventario</option><option value="herramientas">Reponer herramientas</option><option value="transporte">Cubrir transporte</option></select></label>
+          <label>Monto de prueba<select name="amount"><option value="200000">$200.000 COP</option><option value="300000">$300.000 COP</option><option value="400000">$400.000 COP</option></select></label>
+          <label>Plazo de prueba<select name="weeks"><option value="4">4 semanas</option><option value="8">8 semanas</option></select></label>
+          <button>Registrar solicitud de prueba</button>
+        </form>
+        <p id="application-result" hidden></p>
+      </section>
+      <section>
+        <h2>Cuéntanos cómo te fue</h2>
+        <form id="feedback-form">
+          <label>¿Qué tan fácil fue usar el piloto?<select name="ease" required><option value="">Selecciona una respuesta</option><option value="1">1 · Muy difícil</option><option value="2">2 · Difícil</option><option value="3">3 · Regular</option><option value="4">4 · Fácil</option><option value="5">5 · Muy fácil</option></select></label>
+          <label>¿En qué paso te detuviste o qué cambiarías?<textarea name="comment" maxlength="500" rows="4" aria-describedby="comment-help"></textarea></label>
+          <p id="comment-help">Opcional. Evita nombres, correos, números de documento e información financiera real.</p>
+          <button>Guardar feedback</button>
+          <p id="feedback-saved" hidden>Tu respuesta está guardada. Puedes actualizarla.</p>
+        </form>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

@@ -422,8 +422,8 @@
         </dl>
       </div>
       <div class="callout">
-        <h2>Aprender sobre intereses</h2>
-        <p>Practica cuánto capital queda después de un pago. Puedes solicitar crédito sin completar la lección.</p>
+        <h2>Entender mi cuota</h2>
+        <p>Aprende cuánto capital queda después de un abono y cómo calcular si te alcanza para la próxima cuota. La práctica es opcional.</p>
         <p id="own-education-bonus" hidden></p>
         <p id="own-education-storage-note" class="callout callout-attention" role="status" hidden>El bono sigue disponible en esta pestaña. Al recargar, podrías perderlo.</p>
         <div class="actions"><button type="button" class="secondary" data-go="education">Abrir práctica</button></div>
@@ -441,8 +441,30 @@
 
     <section class="card" id="education" aria-labelledby="education-title" hidden>
       <h1 id="education-title" tabindex="-1">Capital e intereses</h1>
+      <details class="callout" id="education-course">
+        <summary>Entender mi cuota antes del próximo pago</summary>
+        <div class="score-content">
+          <p>5 minutos para leer y conversar sobre dos ejemplos ficticios.</p>
+          <div>
+            <h2>Qué cubrió mi abono</h2>
+            <p>El capital es lo que todavía debes del dinero que te prestaron. Los intereses son parte del costo del crédito.</p>
+            <p>Debes $1.000.000 COP de capital y haces un abono de $200.000 COP. Si todo el abono cubre intereses, abonaste $0 COP a capital y sigues debiendo $1.000.000 COP de capital.</p>
+            <p><strong>Para conversar.</strong> ¿Cuánto capital sigues debiendo después del abono?</p>
+            <p><strong>Para la facilitadora.</strong> Pide que señalen qué parte del abono llegó al capital. Como fue $0 COP, el saldo de capital sigue igual.</p>
+          </div>
+          <div>
+            <h2>Cuánto me falta para la cuota</h2>
+            <p>Cuenta el dinero confirmado antes del vencimiento y aparta los gastos esenciales. Compara lo que queda con el valor de la cuota.</p>
+            <p>Tienes $90.000 COP confirmados, apartas $55.000 COP para gastos esenciales y la cuota es de $50.000 COP. Te quedan $35.000 COP para la cuota y te faltan $15.000 COP.</p>
+            <p><strong>Para conversar.</strong> Si te pagan después del vencimiento, ¿cuánto dinero te falta el día de la cuota?</p>
+            <p><strong>Para la facilitadora.</strong> El ingreso llega tarde para esa fecha. El faltante sigue siendo $15.000 COP, la diferencia entre los $50.000 COP de la cuota y los $35.000 COP disponibles.</p>
+          </div>
+          <p><a href="#education-practice-title">Abrir la práctica de Entrevecinos</a></p>
+          <p>Basado en la solicitud piloto EV-FORM-001.</p>
+        </div>
+      </details>
       <div class="callout">
-        <h2>Cuando pagas solo intereses</h2>
+        <h2 id="education-practice-title" tabindex="-1">Cuando pagas solo intereses</h2>
         <p id="education-practice"></p>
       </div>
       <form id="education-form" aria-labelledby="education-form-title">

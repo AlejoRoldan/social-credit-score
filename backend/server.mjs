@@ -16,11 +16,45 @@ const entryPoints = new Map([
 
 const educationContent = 'backend/domain/education-content.mjs';
 
-export async function serve(port = 8000) {
+export async function serve(port = 8000, { host = '127.0.0.1', staging, pilot } = {}) {
   const server = createServer(async (request, response) => {
     const [path] = request.url.split('?');
-    const file = entryPoints.get(path) ?? path.slice(1);
-    if (file !== educationContent && !/^(?:frontend\/(?:index\.html|styles\.css|src\/app\.mjs)|design-system\/tokens\.css|backend\/domain\/[a-z-]+-state\.mjs)$/.test(file)) {
+    if (pilot && path.startsWith('/api/pilot/')) {
+      await pilot.handle(request, response, path.slice('/api/pilot/'.length));
+      return;
+    }
+    if (path === '/healthz' || path === '/version') {
+      if (request.method !== 'GET' && request.method !== 'HEAD') {
+        response.writeHead(405, { Allow: 'GET, HEAD' }).end();
+        return;
+      }
+
+      let status = 200;
+      let body = { status: 'ok' };
+      if (path === '/version') {
+        body = staging ? { environment: 'staging', revision: staging.revision, data: 'synthetic' } : { environment: 'local' };
+      } else if (staging) {
+        try {
+          await staging.check();
+        } catch {
+          status = 503;
+          body = { status: 'unavailable' };
+        }
+      }
+
+      response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      response.end(request.method === 'HEAD' ? undefined : JSON.stringify(body));
+      return;
+    }
+
+    const pilotFile = pilot && {
+      '/piloto': 'frontend/pilot.html',
+      '/piloto/privacidad': 'frontend/pilot-privacy.html',
+      '/pilot.css': 'frontend/pilot.css',
+      '/pilot.mjs': 'frontend/src/pilot.mjs',
+    }[path];
+    const file = pilotFile || entryPoints.get(path) || path.slice(1);
+    if (!pilotFile && file !== educationContent && !/^(?:frontend\/(?:index\.html|styles\.css|src\/app\.mjs)|design-system\/tokens\.css|backend\/domain\/[a-z-]+-state\.mjs)$/.test(file)) {
       response.writeHead(404).end();
       return;
     }
@@ -35,7 +69,7 @@ export async function serve(port = 8000) {
   });
   await new Promise((resolve, reject) => {
     server.once('error', reject);
-    server.listen(port, '127.0.0.1', resolve);
+    server.listen(port, host, resolve);
   });
   return server;
 }

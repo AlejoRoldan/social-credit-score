@@ -113,11 +113,12 @@ export async function launchBrowser() {
       }
       return {
         evaluate, visible,
-        async open(url, waitForApp = true) {
+        waitVisible: (value) => waitFor('Boolean(' + selector(value) + '?.getClientRects().length)'),
+        async open(url, waitForApp = true, readySelector = '#startup-message') {
           const result = await send('Page.navigate', { url });
           assert.equal(result.errorText, undefined);
           if (waitForApp) await ready();
-          else await waitFor('document.readyState === "complete" && document.querySelector("#startup-message")');
+          else await waitFor('document.readyState === "complete" && ' + selector(readySelector));
         },
         async reload() {
           await evaluate('window.entrevecinosReloadPending = true');

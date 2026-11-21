@@ -35,6 +35,10 @@ node --test e2e/flows.mjs
 
 La suite E2E arranca su propio servidor y usa Chrome, Edge o Chromium. Define `BROWSER_PATH` si el navegador está instalado fuera de las rutas habituales. La [guía de la demo](docs/product/guia-demo.md) contiene los recorridos manuales por historia.
 
+La configuración y las comprobaciones del entorno HTTPS de la HU 5.1 están en el [ADR 004](docs/technical/adr/004-entorno-web-de-pruebas.md).
+
+La preparación de la cohorte de diez personas y el recorrido `/piloto` están en la [guía del piloto web](docs/technical/piloto-web.md).
+
 El prototipo incluye los ajustes de las revisiones hasta el PR #11 y el recordatorio privado de la HU 3.3. Consulta los escenarios verificados y los pendientes de producto en la documentación técnica. [Verificación](docs/technical/README.md#verificación) · [Traspaso](docs/technical/traspaso-prototipo.md)
 
 ## Pull requests
